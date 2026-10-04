@@ -53,3 +53,24 @@ class TestAPIEndpoints:
         data = response.json()
         assert data["status"] == "healthy"
         assert "app" in data
+
+    def test_model_info_returns_evaluation_metadata_without_source_path(self):
+        metadata = {
+            "model": "XGBoost (trained on Telco Customer Churn)",
+            "model_status": "real_trained",
+            "decision_threshold": 0.605,
+            "training_data": {"rows": 7043, "source_file": "private/path.csv"},
+            "test_metrics": {"average_precision": 0.66},
+            "test_metrics_95ci": {"pr_auc": {"ci_low": 0.60, "ci_high": 0.71}},
+        }
+        with patch("app.ml.predictor.predictor._is_loaded", True), patch(
+            "app.ml.predictor.predictor._metadata", metadata
+        ):
+            response = client.get("/api/v1/model-info")
+
+        assert response.status_code == 200
+        result = response.json()
+        assert result["model_status"] == "real_trained"
+        assert result["decision_threshold"] == 0.605
+        assert result["test_metrics"]["average_precision"] == 0.66
+        assert "source_file" not in result["training_data"]

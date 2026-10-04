@@ -1,18 +1,19 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Brain, Home } from 'lucide-react';
+import { Activity, Brain, GitBranch, Home } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: Home },
+    { path: '/pipeline', label: 'How It Works', icon: GitBranch },
     { path: '/predict', label: 'Predict & Explain', icon: Brain },
   ];
 
   return (
     <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/80">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
               <Activity className="w-6 h-6 text-white" />
@@ -23,7 +24,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -31,6 +32,8 @@ export default function Navbar() {
                 <Link
                   key={item.path}
                   to={item.path}
+                  title={item.label}
+                  aria-label={item.label}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                     isActive
                       ? 'bg-primary-50 text-primary-700 font-semibold'
@@ -38,7 +41,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="text-sm">{item.label}</span>
+                  <span className="hidden text-sm lg:inline">{item.label}</span>
                 </Link>
               );
             })}

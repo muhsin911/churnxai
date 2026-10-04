@@ -1,4 +1,4 @@
-import os
+import argparse
 import sys
 import json
 import traceback
@@ -13,11 +13,17 @@ try:
     from sklearn.compose import ColumnTransformer
     from xgboost import XGBClassifier
 
-    print("🚀 Starting dummy model creation...")
+    print("Creating a test-only dummy model; the real production model will not be overwritten.")
     
-    # Resolve paths based on current working directory
-    BASE_DIR = Path(os.getcwd())
-    MODEL_DIR = BASE_DIR / "models"
+    parser = argparse.ArgumentParser(description="Create a test-only dummy model artifact.")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path(__file__).resolve().parent / "models" / "test",
+        help="Output directory (defaults to backend/models/test).",
+    )
+    args = parser.parse_args()
+    MODEL_DIR = args.output_dir.expanduser().resolve()
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     print(f"📁 Target directory: {MODEL_DIR.absolute()}")
 
@@ -85,7 +91,7 @@ try:
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
     print(f"✅ Saved dummy metadata to: {meta_path}")
-    print("\n🎉 SUCCESS! You can now start the API.")
+    print("\nTest artifacts created. The API's default model path was not changed.")
 
 except Exception as e:
     print(f"\n❌ ERROR OCCURRED:\n{e}")

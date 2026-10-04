@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { CustomerInput, PredictionResponse, SHAPExplanation } from '../types';
+import type { CustomerInput, ModelInfo, PredictionResponse, SHAPExplanation } from '../types';
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -21,5 +21,10 @@ export const explainPrediction = async (customer: CustomerInput): Promise<SHAPEx
 
 export const healthCheck = async () => {
   const { data } = await api.get('/health');
+  return data;
+};
+
+export const getModelInfo = async (): Promise<ModelInfo> => {
+  const { data } = await api.get<ModelInfo>('/model-info');
   return data;
 };
