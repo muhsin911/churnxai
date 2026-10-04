@@ -8,16 +8,23 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Mount models directory (so we can update models without rebuilding)
       - ./backend/models:/app/models
-      # Mount data directory (for dataset access)
       - ./data:/app/data
-      # Mount MLflow tracking directory
       - ./mlruns:/app/mlruns
     environment:
       - PYTHONUNBUFFERED=1
       - ENVIRONMENT=production
       - DEBUG=False
+      - DATABASE_URL=postgresql://churnuser:churnpassword@postgres:5432/churnxai
+      - MONGODB_URL=mongodb://mongo:27017/churnxai
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
     restart: unless-stopped
     networks:
       - churnxai-network
@@ -50,7 +57,6 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # Mount MLflow tracking directory
       - ./mlruns:/mlruns
     working_dir: /mlruns
     command: >
@@ -59,6 +65,58 @@ services:
     restart: unless-stopped
     networks:
       - churnxai-network
+
+  # ==================== POSTGRESQL ====================
+  postgres:
+    image: postgres:15-alpine
+    container_name: churnxai-postgres
+    environment:
+      POSTGRES_USER: churnuser
+      POSTGRES_PASSWORD: churnpassword
+      POSTGRES_DB: churnxai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - churnxai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U churnuser -d churnxai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== MONGODB ====================
+  mongo:
+    image: mongo:6
+    container_name: churnxai-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - churnxai-network
+
+  # ==================== REDIS ====================
+  redis:
+    image: redis:7-alpine
+    container_name: churnxai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - churnxai-network
+    command: redis-server --appendonly yes
+
+# ==================== VOLUMES ====================
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
 
 # ==================== NETWORK ====================
 networks:
