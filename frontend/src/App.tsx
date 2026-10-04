@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Pipeline from './pages/Pipeline';
 import Predict from './pages/Predict';
+import ProjectGuide from './pages/ProjectGuide';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/predict" element={<Predict />} />
+            <Route path="/guide" element={<ProjectGuide />} />
           </Routes>
         </main>
       </div>

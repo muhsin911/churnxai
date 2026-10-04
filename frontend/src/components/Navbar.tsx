@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Brain, GitBranch, Home } from 'lucide-react';
+import { Activity, BookOpen, Brain, GitBranch, Home } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
@@ -8,6 +8,7 @@ export default function Navbar() {
     { path: '/', label: 'Dashboard', icon: Home },
     { path: '/pipeline', label: 'How It Works', icon: GitBranch },
     { path: '/predict', label: 'Predict & Explain', icon: Brain },
+    { path: '/guide', label: 'Project Guide', icon: BookOpen },
   ];
 
   return (
@@ -27,7 +28,9 @@ export default function Navbar() {
           <div className="flex items-center gap-1 sm:gap-2">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive = item.path === '/'
+                ? location.pathname === item.path
+                : location.pathname.startsWith(item.path);
               return (
                 <Link
                   key={item.path}
