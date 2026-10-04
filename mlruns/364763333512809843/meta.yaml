@@ -1,0 +1,6 @@
+artifact_location: mlflow-artifacts:/364763333512809843
+creation_time: 1791146758185
+experiment_id: '364763333512809843'
+last_update_time: 1791146758185
+lifecycle_stage: active
+name: telco-churn-model-comparison

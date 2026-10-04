@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/364763333512809843/87f4790f4503416ca6df265132a4fef5/artifacts
+end_time: 1791147067035
+entry_point_name: ''
+experiment_id: '364763333512809843'
+lifecycle_stage: active
+run_id: 87f4790f4503416ca6df265132a4fef5
+run_name: repeated-cv-comparison-seed-42
+run_uuid: 87f4790f4503416ca6df265132a4fef5
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1791146759068
+status: 3
+tags: []
+user_id: amkmu

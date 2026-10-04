@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/364763333512809843/5195760a45bd43d7be591a65e611c337/artifacts
+end_time: 1791146854572
+entry_point_name: ''
+experiment_id: '364763333512809843'
+lifecycle_stage: active
+run_id: 5195760a45bd43d7be591a65e611c337
+run_name: random-forest-smote
+run_uuid: 5195760a45bd43d7be591a65e611c337
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1791146822918
+status: 3
+tags: []
+user_id: amkmu

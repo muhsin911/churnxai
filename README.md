@@ -12,8 +12,8 @@ data/WA_Fn-UseC_-Telco-Customer-Churn.csv
 
 Open these notebooks with the `churnxai` Python kernel and run them in order:
 
-1. `notebooks/01_data_audit_eda.ipynb` audits and cleans the CSV, validates the 11 whitespace-only `TotalCharges` rows (each must have tenure 0), writes `data/processed/telco_clean.csv`, and saves four EDA figures under `reports/figures/`.
-2. `notebooks/02_train_evaluate.ipynb` runs model selection, threshold selection, held-out evaluation, bootstrap intervals, and a local SHAP example.
+1. `notebooks/01_data_audit_eda.ipynb` audits and cleans the CSV, validates the 11 whitespace-only `TotalCharges` rows (each must have tenure 0), reports the churn-rate Wilson 95% CI, runs 16 categorical chi-square/Cramér's V tests and 3 numeric point-biserial/Cohen's d tests, bootstraps effect-size intervals, and applies Holm and Benjamini-Hochberg corrections. It writes `data/processed/telco_clean.csv`, `data/processed/feature_relevance.csv`, and four EDA figures under `reports/figures/`.
+2. `notebooks/02_train_evaluate.ipynb` compares four model families and three imbalance strategies, selects an out-of-fold training threshold, evaluates on a locked test set, calculates bootstrap intervals, logs runs to MLflow, and exports global/local SHAP explanations.
 
 The same reproducible training workflow can be run without Jupyter:
 
@@ -22,9 +22,9 @@ conda activate churnxai
 python backend/train_model.py
 ```
 
-The training run uses a stratified 60/20/20 train/validation/test split. XGBoost settings are selected by 5-fold stratified cross-validation using average precision (PR-AUC). The decision threshold is selected on validation data by F1; the held-out test set is reserved for final reporting. PR-AUC, ROC-AUC, F1, confusion counts, and 2,000-resample bootstrap intervals are written to `reports/metrics/model_evaluation.json`.
+The comparison uses one stratified 80/20 train/test split. The training portion is evaluated by repeated stratified CV using average precision (PR-AUC); SMOTE stays inside each imbalanced-learn pipeline. Nadeau–Bengio corrected paired tests compare imbalance strategies. The threshold is selected from out-of-fold training predictions by F1; the held-out test set is evaluated once. PR-AUC, ROC-AUC, F1, confusion counts, and 2,000-resample bootstrap intervals are written to `reports/metrics/model_evaluation.json`; all 12 CV rows are written to `reports/metrics/model_comparison.csv`.
 
-The trained pipeline and metadata replace `backend/models/xgb_churn_pipeline.joblib` and `backend/models/model_metadata.json`. The API expects pipeline steps named `pre` and `clf`. Probabilities are raw XGBoost probabilities and have not been separately calibrated; use them with that caveat.
+The trained imbalanced-learn pipeline and metadata replace `backend/models/xgb_churn_pipeline.joblib` and `backend/models/model_metadata.json`. The API expects pipeline steps named `pre` and `clf`. Probabilities are raw XGBoost probabilities and have not been separately calibrated; use them with that caveat.
 
 ## Run the API and frontend
 

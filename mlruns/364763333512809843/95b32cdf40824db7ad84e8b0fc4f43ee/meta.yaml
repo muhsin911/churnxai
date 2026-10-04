@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/364763333512809843/95b32cdf40824db7ad84e8b0fc4f43ee/artifacts
+end_time: 1791146868022
+entry_point_name: ''
+experiment_id: '364763333512809843'
+lifecycle_stage: active
+run_id: 95b32cdf40824db7ad84e8b0fc4f43ee
+run_name: xgboost-class_weight
+run_uuid: 95b32cdf40824db7ad84e8b0fc4f43ee
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1791146862905
+status: 3
+tags: []
+user_id: amkmu

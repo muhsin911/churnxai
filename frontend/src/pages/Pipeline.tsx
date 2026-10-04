@@ -41,27 +41,27 @@ const stages = [
     label: 'Notebook executed',
     state: 'available',
     icon: BarChart3,
-    summary: 'The EDA notebook creates and saves four exploratory figures.',
+    summary: 'The EDA notebook combines four figures with 19 corrected statistical tests.',
     detail:
-      'It compares label counts, churn rate by contract, tenure by outcome, and monthly charges by outcome. The plots are snapshots of the source data, not causal conclusions.',
-    artifact: 'notebooks/01_data_audit_eda.ipynb · reports/figures/',
+      'It reports a Wilson interval for churn prevalence; uses chi-square/Cramér\'s V for 16 categorical and point-biserial/Cohen\'s d for 3 numeric features; bootstraps effect-size intervals; and applies Holm and Benjamini-Hochberg corrections. Two non-significant features are flagged for review, not automatically dropped.',
+    artifact: 'notebooks/01_data_audit_eda.ipynb · data/processed/feature_relevance.csv',
   },
   {
     title: 'Train and evaluate',
-    label: 'Loading model report',
-    state: 'placeholder',
+    label: '12 configurations compared',
+    state: 'active',
     icon: Layers3,
-    summary: 'Training and evaluation results are loaded from the saved model metadata.',
+    summary: 'Four model families and three imbalance strategies are compared.',
     detail:
-      'The notebook selects XGBoost settings by 5-fold stratified cross-validation, selects a decision threshold on validation data, and evaluates once on a held-out test split.',
+      'Repeated stratified CV uses PR-AUC for all 12 configurations. Nadeau–Bengio corrected paired tests compare imbalance strategies. XGBoost is deployed for TreeSHAP; the overall CV champion is reported separately.',
     artifact: 'notebooks/02_train_evaluate.ipynb · reports/metrics/model_evaluation.json',
   },
   {
     title: 'Calculate probability',
-    label: 'Validation threshold',
+    label: 'OOF threshold',
     state: 'active',
     icon: SlidersHorizontal,
-    summary: 'The pipeline returns P(Churn = Yes); the saved validation threshold sets the class decision.',
+    summary: 'The pipeline returns P(Churn = Yes); an out-of-fold training threshold sets the class decision.',
     detail:
       'The API calls predict_proba(customer)[0, 1]. It predicts Churn when that probability is at least the configured threshold. Risk labels use separate bands: Low <25%, Medium 25–<50%, High 50–<75%, Critical ≥75%.',
     artifact: 'backend/models/model_metadata.json → decision_threshold',
@@ -119,10 +119,11 @@ export default function Pipeline() {
   const stage = stages[selectedStage];
   const StageIcon = stage.icon;
   const isRealModel = modelInfo?.model_status === 'real_trained';
+  const cvChampion = modelInfo?.model_comparison?.overall_cv_champion;
   const stageLabel = selectedStage === 3 && modelInfo
     ? isRealModel ? 'Real model trained' : 'Test placeholder'
     : selectedStage === 4 && modelInfo
-      ? `Threshold ${modelInfo.decision_threshold.toFixed(3)}`
+      ? `OOF threshold ${modelInfo.decision_threshold.toFixed(3)}`
       : stage.label;
   const stageState: keyof typeof statusClasses = selectedStage === 3 && modelInfo
     ? isRealModel ? 'active' : 'placeholder'
@@ -133,9 +134,9 @@ export default function Pipeline() {
       ? `Validation selected a decision threshold of ${modelInfo.decision_threshold.toFixed(3)}.`
       : stage.summary;
   const stageDetail = selectedStage === 3 && modelInfo
-    ? `The best 5-fold CV average precision was ${modelInfo.selection.best_cv_average_precision?.toFixed(3) ?? 'not reported'}. ${modelInfo.split_rows.test ?? 'Unknown'} customers were reserved for final held-out testing.`
+    ? `${modelInfo.model_comparison?.configs_compared ?? 12} configurations were compared using ${modelInfo.model_comparison?.cv_method ?? 'repeated stratified CV'}. Overall CV champion: ${cvChampion?.model ?? 'not reported'} (${cvChampion?.imbalance_strategy ?? 'strategy not reported'}), mean PR-AUC ${cvChampion?.cv_pr_auc_mean.toFixed(3) ?? 'not reported'}. ${modelInfo.split_rows.test ?? 'Unknown'} customers were reserved for final held-out testing.`
     : selectedStage === 4 && modelInfo
-      ? `${modelInfo.threshold_selection.method ?? 'Threshold selection method not reported.'} Validation F1: ${modelInfo.threshold_selection.validation_f1?.toFixed(3) ?? 'not reported'}. Test metrics use this fixed threshold.`
+      ? `${modelInfo.threshold_selection.method ?? 'Threshold selection method not reported.'} OOF F1: ${modelInfo.threshold_selection.oof_f1?.toFixed(3) ?? 'not reported'}. The locked test set did not select this threshold.`
       : stage.detail;
 
   return (
