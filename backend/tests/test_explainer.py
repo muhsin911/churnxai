@@ -22,6 +22,7 @@ class TestChurnExplainer:
         
         # Mock classifier
         clf = MagicMock()
+        clf.n_features_in_ = 3
         clf.predict_proba.return_value = np.array([[0.2, 0.8]]) # 80% churn
         pipeline.named_steps["clf"] = clf
         
@@ -70,6 +71,10 @@ class TestChurnExplainer:
         assert result["waterfall_image_base64"] == "fake_base64_image_string"
         assert len(result["top_positive_drivers"]) <= 5
         assert "Risk Level:" in result["interpretation"]
+        assert np.array_equal(
+            mock_shap_exp.call_args.kwargs["data"],
+            np.array([2.0, 85.0, 1.0]),
+        )
         assert mock_close.called # Ensures matplotlib memory is cleaned up
 
     def test_singleton_pattern(self, mock_pipeline, metadata):

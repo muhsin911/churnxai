@@ -1,0 +1,81 @@
+{
+  "model": "XGBoost (Dummy for API Testing)",
+  "imbalance_strategy": "class_weight",
+  "seed": 42,
+  "decision_threshold": 0.5,
+  "target": "Churn (1 = churned)",
+  "numeric_features": [
+    "tenure",
+    "MonthlyCharges",
+    "TotalCharges"
+  ],
+  "categorical_features": [
+    "Contract",
+    "InternetService",
+    "PaymentMethod",
+    "gender",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "MultipleLines",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "PaperlessBilling"
+  ],
+  "transformed_feature_names": [
+    "num__tenure",
+    "num__MonthlyCharges",
+    "num__TotalCharges",
+    "cat__Contract_Month-to-month",
+    "cat__Contract_Two year",
+    "cat__InternetService_DSL",
+    "cat__InternetService_Fiber optic",
+    "cat__PaymentMethod_Bank transfer (automatic)",
+    "cat__PaymentMethod_Electronic check",
+    "cat__gender_Female",
+    "cat__gender_Male",
+    "cat__SeniorCitizen_No",
+    "cat__Partner_No",
+    "cat__Partner_Yes",
+    "cat__Dependents_No",
+    "cat__Dependents_Yes",
+    "cat__PhoneService_Yes",
+    "cat__MultipleLines_No",
+    "cat__OnlineSecurity_No",
+    "cat__OnlineSecurity_Yes",
+    "cat__OnlineBackup_No",
+    "cat__OnlineBackup_Yes",
+    "cat__DeviceProtection_No",
+    "cat__DeviceProtection_Yes",
+    "cat__TechSupport_No",
+    "cat__TechSupport_Yes",
+    "cat__StreamingTV_No",
+    "cat__StreamingTV_Yes",
+    "cat__StreamingMovies_No",
+    "cat__StreamingMovies_Yes",
+    "cat__PaperlessBilling_No",
+    "cat__PaperlessBilling_Yes"
+  ],
+  "shap_base_value_logodds": -1.0,
+  "shap_output_space": "log-odds",
+  "test_metrics_95ci": {
+    "pr_auc": {
+      "value": 0.85,
+      "ci_low": 0.82,
+      "ci_high": 0.88
+    },
+    "roc_auc": {
+      "value": 0.82,
+      "ci_low": 0.79,
+      "ci_high": 0.85
+    }
+  },
+  "n_bootstrap": 2000,
+  "test_prevalence": 0.265,
+  "calibration_note": "This is a dummy model for API/Frontend testing."
+}

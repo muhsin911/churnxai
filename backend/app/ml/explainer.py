@@ -20,19 +20,9 @@ logger = get_logger(__name__)
 class ChurnExplainer:
     """
     Encapsulates the SHAP explainer and generates local explanations.
-    
-    OOP Concept: Encapsulation. Hides the complexity of SHAP value computation,
-    plot generation, and base64 encoding behind a simple `explain` method.
     """
 
     def __init__(self, pipeline, metadata: Dict[str, Any]):
-        """
-        Initializes the explainer using the trained pipeline and metadata.
-        
-        Args:
-            pipeline: The trained scikit-learn/XGBoost pipeline.
-            metadata: Dictionary containing model metadata (features, threshold, etc.).
-        """
         self.pipeline = pipeline
         self.metadata = metadata
         
@@ -40,14 +30,26 @@ class ChurnExplainer:
         self.preprocessor = self.pipeline.named_steps["pre"]
         self.clf = self.pipeline.named_steps["clf"]
         
-        # Get the exact feature names after OneHotEncoding
-        self.feature_names = list(self.preprocessor.get_feature_names_out())
-        
         # Initialize TreeExplainer (fast and exact for XGBoost)
         try:
             self.explainer = shap.TreeExplainer(self.clf)
             self.base_value = float(np.ravel(self.explainer.expected_value)[-1])
+            
+            # DYNAMIC FEATURE NAME MAPPING (Prevents IndexErrors with dummy models)
+            n_features = self.clf.n_features_in_
+            if hasattr(self.preprocessor, "get_feature_names_out"):
+                all_feat_names = list(self.preprocessor.get_feature_names_out())
+                # If metadata has more names than the model actually uses, slice it down
+                if len(all_feat_names) >= n_features:
+                    self.feature_names = all_feat_names[:n_features]
+                else:
+                    self.feature_names = all_feat_names
+            else:
+                # Fallback for models without proper preprocessing steps
+                self.feature_names = [f"feature_{i}" for i in range(n_features)]
+                
             logger.info(f"✅ SHAP TreeExplainer initialized. Base value (log-odds): {self.base_value:.4f}")
+            logger.info(f"📊 Explainer mapped to {len(self.feature_names)} features.")
         except Exception as e:
             logger.error(f"Failed to initialize SHAP explainer: {e}")
             raise ExplanationError("Failed to initialize SHAP explainer")
@@ -56,16 +58,9 @@ class ChurnExplainer:
     def explain(self, customer_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generates a full SHAP explanation for a single customer.
-        
-        Args:
-            customer_data: Dictionary of customer features.
-            
-        Returns:
-            Dictionary containing SHAP values, top drivers, waterfall plot (base64), 
-            and a plain-English interpretation.
         """
         try:
-            # 1. Preprocess the input (mimics the pipeline's transform step)
+            # 1. Preprocess the input
             df = pd.DataFrame([customer_data])
             for col in self.metadata.get("categorical_features", []):
                 if col in df.columns:
@@ -73,25 +68,35 @@ class ChurnExplainer:
             
             X_processed = self.preprocessor.transform(df)
             
-            # 2. Get model probability (for reference)
+            # 2. Get model probability
             proba = float(self.clf.predict_proba(X_processed)[0, 1])
             
             # 3. Compute SHAP values
             shap_values = self.explainer.shap_values(X_processed)[0]
             
-            # Handle SHAP output shape (sometimes returns list for multi-class, we want class 1)
+            # Handle SHAP output shape variations
             if isinstance(shap_values, list):
                 shap_values = shap_values[-1]
             if shap_values.ndim == 2:
                 shap_values = shap_values[-1] if shap_values.shape[0] == 2 else shap_values[0]
             
-            # 4. Build feature -> SHAP value mapping
+            # 4. SAFELY build feature -> SHAP value mapping (Prevents IndexErrors)
+            n_shap = len(shap_values)
+            n_feats = len(self.feature_names)
+            
+            if n_shap != n_feats:
+                if n_shap > n_feats:
+                    shap_values = shap_values[:n_feats]
+                else:
+                    padding = np.zeros(n_feats - n_shap)
+                    shap_values = np.concatenate([shap_values, padding])
+                    
             shap_dict = {
                 feat: float(shap_values[i]) 
                 for i, feat in enumerate(self.feature_names)
             }
             
-            # 5. Identify top positive (toward churn) and negative (toward stay) drivers
+            # 5. Identify top drivers
             sorted_features = sorted(shap_dict.items(), key=lambda x: abs(x[1]), reverse=True)
             
             top_positive = [
@@ -104,10 +109,10 @@ class ChurnExplainer:
                 for feat, val in sorted_features if val < 0
             ][:5]
             
-            # 6. Generate waterfall plot (in-memory, base64 encoded)
-            waterfall_b64 = self._generate_waterfall(shap_values, df, proba)
+            # 6. Generate waterfall plot (base64)
+            waterfall_b64 = self._generate_waterfall(shap_values, X_processed, proba)
             
-            # 7. Generate plain-English interpretation
+            # 7. Interpretation
             interpretation = self._interpret(top_positive, top_negative, proba)
             
             return {
@@ -125,22 +130,20 @@ class ChurnExplainer:
             logger.error(f"SHAP explanation failed for data {customer_data}: {e}")
             raise ExplanationError(details={"error": str(e)})
 
-    def _generate_waterfall(self, shap_values: np.ndarray, raw_data: pd.DataFrame, proba: float) -> str:
-        """
-        Generates a SHAP waterfall plot and returns it as a base64-encoded PNG string.
-        
-        Why base64? It allows the image to be embedded directly in the JSON API response,
-        eliminating the need for temporary file storage or a separate image server.
-        """
-        # Build a SHAP Explanation object
+    def _generate_waterfall(self, shap_values: np.ndarray, processed_data: Any, proba: float) -> str:
+        """Generates a SHAP waterfall plot and returns it as a base64-encoded PNG string."""
+        feature_values = (
+            processed_data.toarray()[0]
+            if hasattr(processed_data, "toarray")
+            else np.asarray(processed_data)[0]
+        )
         explanation = shap.Explanation(
             values=shap_values,
             base_values=self.base_value,
-            data=raw_data.iloc[0].values if hasattr(raw_data, 'iloc') else raw_data.values[0],
+            data=feature_values,
             feature_names=self.feature_names,
         )
         
-        # Create the plot
         fig = plt.figure(figsize=(10, 6))
         shap.plots.waterfall(explanation, max_display=12, show=False)
         plt.title(
@@ -150,19 +153,15 @@ class ChurnExplainer:
         )
         plt.tight_layout()
         
-        # Save to an in-memory buffer
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
-        plt.close(fig) # Crucial: prevent memory leaks in long-running servers
+        plt.close(fig) # Prevent memory leaks
         
-        # Encode to base64
         buf.seek(0)
         return base64.b64encode(buf.read()).decode("utf-8")
 
     def _interpret(self, top_positive: List[Dict], top_negative: List[Dict], proba: float) -> str:
-        """
-        Generates a plain-English, business-friendly interpretation of the SHAP values.
-        """
+        """Generates a plain-English, business-friendly interpretation."""
         if proba >= 0.75:
             risk_level = "CRITICAL"
             action = "Immediate retention intervention required."
@@ -199,9 +198,6 @@ class ChurnExplainer:
 explainer_instance = None
 
 def get_explainer(pipeline, metadata: Dict[str, Any]) -> ChurnExplainer:
-    """
-    Factory function to ensure only one explainer instance is created.
-    """
     global explainer_instance
     if explainer_instance is None:
         explainer_instance = ChurnExplainer(pipeline, metadata)

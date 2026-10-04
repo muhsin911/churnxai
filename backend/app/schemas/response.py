@@ -16,6 +16,11 @@ class PredictionResponse(BaseModel):
     model_used: str = Field(..., description="Name of the model used for prediction")
     threshold_used: float = Field(..., description="Decision threshold applied")
 
+    # Fix the Pydantic V2 warning for fields starting with "model_"
+    model_config = {
+        "protected_namespaces": ()
+    }
+
 
 class SHAPDriver(BaseModel):
     """Schema for a single SHAP feature driver."""
