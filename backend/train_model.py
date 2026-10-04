@@ -218,7 +218,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     os.replace(temporary, path)
 
 
-def train_and_evaluate(
+def _legacy_xgboost_validation_run(
     data_path: Path = DEFAULT_DATA_PATH,
     model_dir: Path = DEFAULT_MODEL_DIR,
     processed_path: Path = DEFAULT_PROCESSED_PATH,
@@ -386,6 +386,35 @@ def train_and_evaluate(
     }
 
 
+def train_and_evaluate(
+    data_path: Path = DEFAULT_DATA_PATH,
+    model_dir: Path = DEFAULT_MODEL_DIR,
+    processed_path: Path = DEFAULT_PROCESSED_PATH,
+    figures_dir: Path = DEFAULT_FIGURES_DIR,
+    metrics_path: Path = DEFAULT_METRICS_PATH,
+    random_state: int = 42,
+    n_bootstrap: int = 2000,
+    cv_splits: int = 5,
+    cv_repeats: int = 2,
+    mlp_epochs: int = 35,
+) -> dict[str, Any]:
+    """Run the full model/imbalance comparison and export the deployable XGBoost."""
+    from model_comparison import train_and_evaluate as compare_models
+
+    return compare_models(
+        data_path=data_path,
+        model_dir=model_dir,
+        processed_path=processed_path,
+        figures_dir=figures_dir,
+        metrics_path=metrics_path,
+        random_state=random_state,
+        n_bootstrap=n_bootstrap,
+        cv_splits=cv_splits,
+        cv_repeats=cv_repeats,
+        mlp_epochs=mlp_epochs,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA_PATH)
@@ -395,6 +424,8 @@ def main() -> None:
     parser.add_argument("--metrics", type=Path, default=DEFAULT_METRICS_PATH)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--bootstrap", type=int, default=2000)
+    parser.add_argument("--cv-repeats", type=int, default=2)
+    parser.add_argument("--mlp-epochs", type=int, default=35)
     args = parser.parse_args()
     result = train_and_evaluate(
         data_path=args.data,
@@ -404,6 +435,8 @@ def main() -> None:
         metrics_path=args.metrics,
         random_state=args.seed,
         n_bootstrap=args.bootstrap,
+        cv_repeats=args.cv_repeats,
+        mlp_epochs=args.mlp_epochs,
     )
     print(json.dumps(result["metadata"], indent=2))
     print(f"\nSaved pipeline to {result['model_path']}")

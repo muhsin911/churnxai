@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/364763333512809843/91dadcaea1b0494fb1cfcc97154a0ef9/artifacts
+end_time: 1791146779761
+entry_point_name: ''
+experiment_id: '364763333512809843'
+lifecycle_stage: active
+run_id: 91dadcaea1b0494fb1cfcc97154a0ef9
+run_name: logistic-regression-smote
+run_uuid: 91dadcaea1b0494fb1cfcc97154a0ef9
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1791146771939
+status: 3
+tags: []
+user_id: amkmu

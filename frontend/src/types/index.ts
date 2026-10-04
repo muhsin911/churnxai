@@ -71,9 +71,26 @@ export interface ModelInfo {
     best_cv_average_precision?: number;
     best_params?: Record<string, string | number>;
   };
+  model_comparison?: {
+    configs_compared?: number;
+    cv_method?: string;
+    overall_cv_champion?: {
+      model: string;
+      imbalance_strategy: string;
+      cv_pr_auc_mean: number;
+      cv_pr_auc_std: number;
+    };
+    deployment_xgboost_config?: {
+      model: string;
+      imbalance_strategy: string;
+      cv_pr_auc_mean: number;
+      cv_pr_auc_std: number;
+    };
+    nadeau_bengio_correction?: string;
+  };
   threshold_selection: {
     method?: string;
-    validation_f1?: number;
+    oof_f1?: number;
   };
   test_prevalence?: number;
   test_metrics?: {
@@ -88,4 +105,5 @@ export interface ModelInfo {
   };
   test_metrics_95ci?: Record<string, ModelMetricInterval>;
   n_bootstrap?: number;
+  library_versions?: Record<string, string>;
 }

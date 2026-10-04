@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/364763333512809843/c5c7e516227c4a39ac46cb3b80e06f26/artifacts
+end_time: 1791146822655
+entry_point_name: ''
+experiment_id: '364763333512809843'
+lifecycle_stage: active
+run_id: c5c7e516227c4a39ac46cb3b80e06f26
+run_name: random-forest-class_weight
+run_uuid: c5c7e516227c4a39ac46cb3b80e06f26
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1791146801697
+status: 3
+tags: []
+user_id: amkmu

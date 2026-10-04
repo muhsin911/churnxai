@@ -46,9 +46,11 @@ async def model_info():
         "training_data": safe_training_data,
         "split_rows": metadata.get("split_rows", {}),
         "selection": metadata.get("selection", {}),
+        "model_comparison": metadata.get("model_comparison", {}),
         "threshold_selection": metadata.get("threshold_selection", {}),
         "test_prevalence": metadata.get("test_prevalence"),
         "test_metrics": metadata.get("test_metrics", {}),
         "test_metrics_95ci": metadata.get("test_metrics_95ci", {}),
         "n_bootstrap": metadata.get("n_bootstrap"),
+        "library_versions": metadata.get("library_versions", {}),
     }

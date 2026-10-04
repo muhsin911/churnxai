@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/364763333512809843/8a3217174f914ee2ac19578a48d44b24/artifacts
+end_time: 1791146880151
+entry_point_name: ''
+experiment_id: '364763333512809843'
+lifecycle_stage: active
+run_id: 8a3217174f914ee2ac19578a48d44b24
+run_name: xgboost-smote
+run_uuid: 8a3217174f914ee2ac19578a48d44b24
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1791146868322
+status: 3
+tags: []
+user_id: amkmu
