@@ -8,8 +8,17 @@ from app.ml.predictor import predictor
 
 client = TestClient(app)
 
+VALID_CUSTOMER = {
+    "gender": "Female", "SeniorCitizen": "No", "Partner": "Yes", "Dependents": "No",
+    "tenure": 2, "PhoneService": "Yes", "MultipleLines": "No", "InternetService": "DSL",
+    "OnlineSecurity": "No", "OnlineBackup": "Yes", "DeviceProtection": "No", "TechSupport": "No",
+    "StreamingTV": "No", "StreamingMovies": "No", "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes", "PaymentMethod": "Electronic check",
+    "MonthlyCharges": 85.70, "TotalCharges": 171.40,
+}
+
 class TestAPIEndpoints:
-    @patch("app.ml.predictor.predictor.is_loaded", True)
+    @patch("app.ml.predictor.predictor._is_loaded", True)
     @patch("app.ml.predictor.predictor.predict")
     def test_predict_success(self, mock_predict):
         """Test the /predict endpoint with valid data."""
@@ -22,29 +31,20 @@ class TestAPIEndpoints:
             "threshold_used": 0.5
         }
         
-        payload = {
-            "gender": "Female", "SeniorCitizen": "No", "Partner": "Yes", "Dependents": "No",
-            "tenure": 2, "PhoneService": "Yes", "MultipleLines": "No", "InternetService": "DSL",
-            "OnlineSecurity": "No", "OnlineBackup": "Yes", "DeviceProtection": "No", "TechSupport": "No",
-            "StreamingTV": "No", "StreamingMovies": "No", "Contract": "Month-to-month",
-            "PaperlessBilling": "Yes", "PaymentMethod": "Electronic check",
-            "MonthlyCharges": 85.70, "TotalCharges": 171.40
-        }
-        
-        response = client.post("/api/v1/predict", json=payload)
+        response = client.post("/api/v1/predict", json=VALID_CUSTOMER)
         
         assert response.status_code == 200
         data = response.json()
         assert data["churn_probability"] == 0.85
         assert data["churn_risk"] == "Critical"
 
-    @patch("app.ml.predictor.predictor.is_loaded", False)
+    @patch("app.ml.predictor.predictor._is_loaded", False)
     def test_predict_model_not_loaded(self):
         """Test that /predict returns 503 if the model is not loaded."""
-        payload = {"tenure": 2, "MonthlyCharges": 85.0} # Simplified for brevity in test
-        # Note: Pydantic will catch missing fields first, but if we bypass or test the logic:
-        # The global exception handler should catch ModelNotLoadedError and return 503.
-        pass # Covered by the predictor unit tests, but good to know the flow.
+        response = client.post("/api/v1/predict", json=VALID_CUSTOMER)
+
+        assert response.status_code == 503
+        assert response.json()["detail"]["error"] == "model_not_loaded"
 
     def test_health_check(self):
         """Test the /health endpoint."""

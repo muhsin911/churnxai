@@ -6,6 +6,8 @@ import io
 import base64
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import shap
 from typing import Dict, Any, List
@@ -137,24 +139,29 @@ class ChurnExplainer:
             if hasattr(processed_data, "toarray")
             else np.asarray(processed_data)[0]
         )
+        plot_feature_names = [
+            name.removeprefix("cat__").removeprefix("num__").replace("_", " ")
+            for name in self.feature_names
+        ]
         explanation = shap.Explanation(
             values=shap_values,
             base_values=self.base_value,
             data=feature_values,
-            feature_names=self.feature_names,
+            feature_names=plot_feature_names,
         )
         
-        fig = plt.figure(figsize=(10, 6))
+        fig = plt.figure(figsize=(12, 7.5))
         shap.plots.waterfall(explanation, max_display=12, show=False)
-        plt.title(
+        fig.set_size_inches(12, 7.5)
+        fig.suptitle(
             f"SHAP Waterfall — P(churn) = {proba:.3f}\n"
             f"(Base {1/(1+np.exp(-self.base_value)):.3f} + contributions = {proba:.3f})",
-            fontsize=12, fontweight="bold"
+            fontsize=12, fontweight="bold", y=0.98
         )
-        plt.tight_layout()
+        fig.subplots_adjust(left=0.45, right=0.98, top=0.88, bottom=0.12)
         
         buf = io.BytesIO()
-        fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
+        fig.savefig(buf, format="png", dpi=120)
         plt.close(fig) # Prevent memory leaks
         
         buf.seek(0)
