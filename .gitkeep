@@ -1,0 +1,4 @@
+# Create placeholder files (empty files that keep folders in Git)
+echo. > data\.gitkeep
+echo. > backend\models\.gitkeep
+echo. > reports\figures\.gitkeep
