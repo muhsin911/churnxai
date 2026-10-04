@@ -1,0 +1,67 @@
+services:
+  # ==================== BACKEND ====================
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: churnxai-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount models directory (so we can update models without rebuilding)
+      - ./backend/models:/app/models
+      # Mount data directory (for dataset access)
+      - ./data:/app/data
+      # Mount MLflow tracking directory
+      - ./mlruns:/app/mlruns
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=production
+      - DEBUG=False
+    restart: unless-stopped
+    networks:
+      - churnxai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==================== FRONTEND ====================
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: churnxai-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - churnxai-network
+
+  # ==================== MLFLOW ====================
+  mlflow:
+    image: python:3.11-slim
+    container_name: churnxai-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount MLflow tracking directory
+      - ./mlruns:/mlruns
+    working_dir: /mlruns
+    command: >
+      bash -c "pip install --no-cache-dir mlflow==2.9.2 && 
+      mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns"
+    restart: unless-stopped
+    networks:
+      - churnxai-network
+
+# ==================== NETWORK ====================
+networks:
+  churnxai-network:
+    driver: bridge
+    name: churnxai-network

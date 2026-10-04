@@ -39,11 +39,10 @@ class TestChurnExplainer:
     @patch("app.ml.explainer.shap.Explanation")
     @patch("app.ml.explainer.plt.figure")
     @patch("app.ml.explainer.shap.plots.waterfall")
-    @patch("app.ml.explainer.plt.tight_layout")
     @patch("app.ml.explainer.plt.close")
     @patch("app.ml.explainer.io.BytesIO")
     @patch("app.ml.explainer.base64.b64encode")
-    def test_explain_success(self, mock_b64, mock_bytesio, mock_close, mock_tight, 
+    def test_explain_success(self, mock_b64, mock_bytesio, mock_close,
                              mock_waterfall, mock_fig, mock_shap_exp, mock_tree_exp, 
                              mock_pipeline, metadata):
         """Test that the explainer returns a properly formatted explanation."""
@@ -75,6 +74,13 @@ class TestChurnExplainer:
             mock_shap_exp.call_args.kwargs["data"],
             np.array([2.0, 85.0, 1.0]),
         )
+        assert mock_shap_exp.call_args.kwargs["feature_names"] == [
+            "tenure", "MonthlyCharges", "Contract Month-to-month"
+        ]
+        mock_fig.return_value.subplots_adjust.assert_called_once_with(
+            left=0.45, right=0.98, top=0.88, bottom=0.12
+        )
+        assert "bbox_inches" not in mock_fig.return_value.savefig.call_args.kwargs
         assert mock_close.called # Ensures matplotlib memory is cleaned up
 
     def test_singleton_pattern(self, mock_pipeline, metadata):
