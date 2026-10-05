@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { predictChurn, explainPrediction } from '../services/api';
+import { predictAndExplain } from '../services/api';
 import type { CustomerInput, PredictionResponse, SHAPExplanation } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { AlertCircle, TrendingUp, TrendingDown, Lightbulb } from 'lucide-react';
@@ -46,12 +46,9 @@ export default function Predict() {
     setExplanation(null);
 
     try {
-      const [pred, expl] = await Promise.all([
-        predictChurn(customer),
-        explainPrediction(customer),
-      ]);
-      setPrediction(pred);
-      setExplanation(expl);
+      const result = await predictAndExplain(customer);
+      setPrediction(result.prediction);
+      setExplanation(result.explanation);
     } catch (err: unknown) {
       const detail = axios.isAxiosError<ApiErrorResponse>(err)
         ? err.response?.data?.detail

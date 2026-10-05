@@ -3,7 +3,7 @@ Application configuration using Pydantic Settings.
 Reads environment variables and provides type-safe access.
 """
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,9 +37,13 @@ class Settings(BaseSettings):
     MAX_WORKERS: int = 4
     REQUEST_TIMEOUT: int = 30
 
-    DATABASE_URL: Optional[str] = None
-    MONGODB_URL: Optional[str] = None
-    REDIS_URL: Optional[str] = None
+    DATABASE_URL: str = "postgresql+psycopg://churnuser:churnpassword@localhost:5432/churnxai"
+    JWT_SECRET_KEY: str = "development-only-change-before-deployment"
+    AUTH_COOKIE_SECURE: bool = False
+    AUTH_COOKIE_NAME: str = "churnxai_session"
+    AUTH_SESSION_HOURS: int = 8
+    AUTH_MAX_FAILED_LOGINS: int = 5
+    AUTH_LOCKOUT_MINUTES: int = 15
 
     model_config = SettingsConfigDict(
         env_file=".env",

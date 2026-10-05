@@ -3,11 +3,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from sqlalchemy import text
+
 from app.core.config import settings
 from app.core.exceptions import ChurnXAIError
 from app.utils.logging import setup_logging, get_logger
 from app.api.router import api_router
 from app.ml.predictor import predictor
+from app.db.session import engine
 
 logger = get_logger(__name__)
 
@@ -20,7 +23,22 @@ async def lifespan(app: FastAPI):
     # --- STARTUP ---
     setup_logging()
     logger.info(f"🚀 Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    
+    if settings.ENVIRONMENT.lower() in {"production", "prod"}:
+        if (
+            len(settings.JWT_SECRET_KEY) < 32
+            or settings.JWT_SECRET_KEY == "development-only-change-before-deployment"
+            or settings.JWT_SECRET_KEY.startswith("replace_with_")
+        ):
+            raise RuntimeError("Set a unique JWT_SECRET_KEY of at least 32 characters before production startup.")
+
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        logger.info("✅ PostgreSQL connection verified.")
+    except Exception:
+        logger.exception("PostgreSQL connection failed; refusing to start without the application database.")
+        raise
+
     try:
         predictor.load()
         logger.info("✅ ML Model loaded successfully at startup.")

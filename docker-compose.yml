@@ -6,25 +6,21 @@ services:
       dockerfile: Dockerfile
     container_name: churnxai-backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./backend/models:/app/models
       - ./data:/app/data
       - ./mlruns:/app/mlruns
     environment:
       - PYTHONUNBUFFERED=1
-      - ENVIRONMENT=production
+      - ENVIRONMENT=${ENVIRONMENT:-development}
       - DEBUG=False
-      - DATABASE_URL=postgresql://churnuser:churnpassword@postgres:5432/churnxai
-      - MONGODB_URL=mongodb://mongo:27017/churnxai
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-churnuser}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your root .env file}@postgres:5432/${POSTGRES_DB:-churnxai}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in your root .env file}
+      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false}
     depends_on:
       postgres:
         condition: service_healthy
-      mongo:
-        condition: service_started
-      redis:
-        condition: service_started
     restart: unless-stopped
     networks:
       - churnxai-network
@@ -42,7 +38,7 @@ services:
       dockerfile: Dockerfile
     container_name: churnxai-frontend
     ports:
-      - "3000:80"
+      - "127.0.0.1:3000:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -55,7 +51,7 @@ services:
     image: python:3.11-slim
     container_name: churnxai-mlflow
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - ./mlruns:/mlruns
     working_dir: /mlruns
@@ -71,52 +67,23 @@ services:
     image: postgres:15-alpine
     container_name: churnxai-postgres
     environment:
-      POSTGRES_USER: churnuser
-      POSTGRES_PASSWORD: churnpassword
-      POSTGRES_DB: churnxai
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-churnuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your root .env file}
+      POSTGRES_DB: ${POSTGRES_DB:-churnxai}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - churnxai-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U churnuser -d churnxai"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ==================== MONGODB ====================
-  mongo:
-    image: mongo:6
-    container_name: churnxai-mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    restart: unless-stopped
-    networks:
-      - churnxai-network
-
-  # ==================== REDIS ====================
-  redis:
-    image: redis:7-alpine
-    container_name: churnxai-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    networks:
-      - churnxai-network
-    command: redis-server --appendonly yes
-
 # ==================== VOLUMES ====================
 volumes:
   postgres_data:
-  mongo_data:
-  redis_data:
 
 # ==================== NETWORK ====================
 networks:

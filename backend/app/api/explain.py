@@ -1,6 +1,8 @@
 """Explainability endpoint."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from app.schemas import CustomerInput, SHAPExplanation
+from app.db.dependencies import UserRole, require_roles
+from app.db.models import User
 from app.ml.predictor import predictor
 from app.ml.explainer import get_explainer
 from app.core.exceptions import ModelNotLoadedError, ExplanationError
@@ -8,9 +10,10 @@ from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["Explainability"])
+prediction_access = require_roles(UserRole.STAFF, UserRole.MANAGER, UserRole.PROFESSOR)
 
 @router.post("/explain", response_model=SHAPExplanation)
-async def explain_churn(customer: CustomerInput):
+def explain_churn(customer: CustomerInput, _user: User = Depends(prediction_access)):
     """
     Generates a SHAP explanation for a given customer profile.
     """

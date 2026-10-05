@@ -1,26 +1,46 @@
 """Health check endpoint for monitoring and load balancers."""
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.core.config import settings
 from app.core.exceptions import ModelNotLoadedError
+from app.db.dependencies import UserRole, require_roles
+from app.db.models import User
+from app.db.session import engine
 from app.ml.predictor import predictor
+from app.utils.logging import get_logger
 
 router = APIRouter(tags=["Health"])
+logger = get_logger(__name__)
+project_view_access = require_roles(UserRole.MANAGER, UserRole.PROFESSOR)
 
 @router.get("/health")
-async def health_check():
+def health_check() -> dict[str, str | bool]:
     """
-    Returns the health status of the API and whether the ML model is loaded.
+    Return API and PostgreSQL readiness along with the model loading status.
     """
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        logger.exception("PostgreSQL health check failed")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Application database is unavailable.",
+        ) from exc
+
     return {
         "status": "healthy",
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
+        "database": "healthy",
         "model_loaded": predictor.is_loaded
     }
 
 
 @router.get("/model-info")
-async def model_info():
+def model_info(_user: User = Depends(project_view_access)):
     """Return the saved model's non-sensitive training and evaluation summary."""
     if not predictor.is_loaded or predictor._metadata is None:
         raise ModelNotLoadedError().to_http_exception()

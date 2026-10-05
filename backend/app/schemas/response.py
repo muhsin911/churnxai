@@ -3,11 +3,13 @@ Pydantic schemas for API responses.
 Defines the exact contract for what the API returns to the frontend.
 """
 from typing import List, Dict, Any, Optional
+from uuid import UUID
 from pydantic import BaseModel, Field
 
 
 class PredictionResponse(BaseModel):
     """Response schema for the /predict endpoint."""
+    prediction_id: Optional[UUID] = Field(None, description="Persisted audit record identifier")
     customerID: Optional[str] = Field(None, description="Optional customer identifier")
     churn_probability: float = Field(..., description="Probability of churn (0.0 to 1.0)")
     churn_risk: str = Field(..., description="Risk level: Low, Medium, High, or Critical")

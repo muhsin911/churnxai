@@ -21,6 +21,7 @@ export interface CustomerInput {
 }
 
 export interface PredictionResponse {
+  prediction_id?: string;
   customerID?: string;
   churn_probability: number;
   churn_risk: 'Low' | 'Medium' | 'High' | 'Critical';
@@ -28,6 +29,61 @@ export interface PredictionResponse {
   confidence: string;
   model_used: string;
   threshold_used: number;
+}
+
+export interface PredictionExperience {
+  prediction_id: string;
+  prediction: PredictionResponse;
+  explanation: SHAPExplanation;
+}
+
+export type UserRole = 'staff' | 'manager' | 'professor';
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  role: UserRole;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  password: string;
+  role: UserRole;
+}
+
+export interface ManagedUser {
+  id: string;
+  username: string;
+  role: UserRole;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ManagedUserList {
+  items: ManagedUser[];
+  total: number;
+  active_total: number;
+}
+
+export interface PredictionHistoryItem {
+  id: string;
+  created_at: string;
+  username?: string | null;
+  model_name: string;
+  model_status: string;
+  churn_probability: number;
+  churn_risk: 'Low' | 'Medium' | 'High' | 'Critical';
+  predicted_class: boolean;
+  decision_threshold: number;
+  top_positive_drivers: SHAPDriver[];
+  top_negative_drivers: SHAPDriver[];
+}
+
+export interface PredictionHistoryResponse {
+  items: PredictionHistoryItem[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface SHAPDriver {

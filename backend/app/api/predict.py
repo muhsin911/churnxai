@@ -1,15 +1,24 @@
 """Prediction endpoint."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.schemas import CustomerInput, PredictionResponse
+from app.db.dependencies import DbSession, UserRole, require_roles
+from app.db.models import PredictionRecord, User
 from app.ml.predictor import predictor
 from app.core.exceptions import ModelNotLoadedError, ModelPredictionError
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["Prediction"])
+prediction_access = require_roles(UserRole.STAFF, UserRole.MANAGER, UserRole.PROFESSOR)
 
 @router.post("/predict", response_model=PredictionResponse)
-async def predict_churn(customer: CustomerInput):
+def predict_churn(
+    customer: CustomerInput,
+    db: DbSession,
+    user: User = Depends(prediction_access),
+) -> PredictionResponse:
     """
     Predicts churn probability for a given customer profile.
     """
@@ -18,11 +27,32 @@ async def predict_churn(customer: CustomerInput):
     
     try:
         # .model_dump() converts the Pydantic model to a standard dict
-        result = predictor.predict(customer.model_dump())
+        customer_data = customer.model_dump()
+        result = predictor.predict(customer_data)
+        record = PredictionRecord(
+            user_id=user.id,
+            model_name=str(result["model_used"]),
+            model_status=str((predictor._metadata or {}).get("model_status", "unknown")),
+            churn_probability=float(result["churn_probability"]),
+            churn_risk=str(result["churn_risk"]),
+            predicted_class=bool(result["predicted_class"]),
+            decision_threshold=float(result["threshold_used"]),
+            input_features=customer_data,
+            explanation={"top_positive_drivers": [], "top_negative_drivers": []},
+        )
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+        result["prediction_id"] = record.id
         return PredictionResponse(**result)
     
-    except ModelPredictionError as e:
-        raise e.to_http_exception()
-    except Exception as e:
-        logger.error(f"Unexpected error in /predict: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during prediction")
+    except ModelPredictionError as exc:
+        db.rollback()
+        raise exc.to_http_exception() from exc
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.exception("Prediction or prediction audit persistence failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Prediction could not be completed and recorded.",
+        ) from exc

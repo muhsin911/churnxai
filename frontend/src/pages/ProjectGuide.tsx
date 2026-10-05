@@ -5,8 +5,10 @@ import {
   Braces,
   CheckCircle2,
   CircleHelp,
+  Database,
   FileText,
   GitBranch,
+  KeyRound,
   Lightbulb,
   Network,
   ShieldCheck,
@@ -21,6 +23,7 @@ const sections = [
   { id: 'terms', label: 'Tech words', icon: BookOpen },
   { id: 'implementation', label: 'How it works', icon: Braces },
   { id: 'files', label: 'File guide', icon: FileText },
+  { id: 'accounts', label: 'Accounts & data', icon: Database },
   { id: 'viva', label: 'Viva', icon: CircleHelp },
 ] as const;
 
@@ -69,56 +72,57 @@ const glossary = [
 ] as const;
 
 const vivaQuestions = [
-  ['What is the title of your project?', '“Explainable Predictive Analytics: An MLOps Framework for Transparent Customer Retention.” The application is called ChurnXAI.'],
-  ['What is customer churn?', 'Customer churn means a customer stops using a company’s service. In this dataset, the target records whether a telecom customer left.'],
-  ['What problem does your project address?', 'It explores whether past customer information can help identify customers who may churn, so staff can review the risk and consider retention support.'],
-  ['What does “XAI” mean?', 'Explainable Artificial Intelligence: techniques that help people understand how a model reached an output. Here, SHAP is used.'],
-  ['What dataset does the project use?', 'The IBM/Kaggle Telco Customer Churn dataset in the repository. It contains 7,043 customer rows and 21 original columns.'],
-  ['What is the target variable?', 'Churn. The training code encodes it as 1 for “Yes, churned” and 0 for “No, stayed.”'],
-  ['What are features?', 'The customer attributes supplied to the model, such as tenure, contract type, services, and charges.'],
-  ['How many customers churned in the source dataset?', 'The saved metadata reports 1,869 “Yes” cases and 5,174 “No” cases.'],
-  ['Why is class imbalance important here?', 'There are fewer churners than non-churners. A model can score well on accuracy by mostly predicting the larger class, while still missing churners.'],
-  ['What data-cleaning issue did you check?', 'There are 11 whitespace-only TotalCharges values. The audit verifies that all 11 have tenure zero before setting TotalCharges to 0.0.'],
-  ['What statistical tests are used in EDA?', 'Chi-square with Cramér’s V for categorical features, and point-biserial correlation with Cohen’s d for numeric features.'],
-  ['What does a Wilson interval describe?', 'It gives a plausible range for the population proportion based on the observed churn share, rather than presenting that share as exact.'],
-  ['Why correct for multiple testing?', 'Testing many features increases the chance of false positives. Holm and Benjamini–Hochberg adjustments account for that family of tests.'],
-  ['What is the purpose of a train/test split?', 'The training portion is used to fit/select the model. A separate test portion is held back for a final estimate of performance on unseen examples.'],
-  ['How large is the locked test set?', 'The metadata records 5,634 training rows and 1,409 test rows after a stratified 80/20 split.'],
-  ['Which model families were compared?', 'Logistic Regression, Random Forest, XGBoost, and a PyTorch multilayer perceptron.'],
-  ['Which imbalance strategies were compared?', 'No special handling, class weighting, and SMOTE oversampling.'],
-  ['What is cross-validation?', 'It trains and evaluates on several different folds of training data, giving a more stable comparison than one validation split.'],
-  ['How is data leakage prevented?', 'The test set is held out, and preprocessing and SMOTE are fitted inside each training pipeline/fold rather than on the complete dataset first.'],
-  ['What does SMOTE do?', 'It creates synthetic minority-class training points by interpolating between nearby minority examples. It is only applied in the fold’s training path.'],
-  ['What is Nadeau–Bengio correction for?', 'It adjusts a paired comparison for dependence caused by overlapping cross-validation training sets, avoiding an overly optimistic ordinary t-test.'],
-  ['How was the final model choice made?', 'The model-comparison artifact reports XGBoost with no imbalance adjustment as both the overall CV champion and selected deployment configuration, based on mean CV PR-AUC.'],
-  ['Why does the project emphasize PR-AUC?', 'Precision–recall performance focuses on the positive class and is informative when churners are the minority class.'],
-  ['What is a decision threshold?', 'It is the probability cutoff that turns a probability into a predicted class. The saved model uses approximately 0.335.'],
-  ['How was the threshold selected?', 'The metadata says maximum F1 on five-fold out-of-fold training predictions; the locked test set did not choose the threshold.'],
-  ['What does precision mean?', 'Among customers predicted to churn, the fraction who actually churned.'],
-  ['What does recall mean?', 'Among customers who actually churned, the fraction the model successfully identified.'],
-  ['What does F1 mean?', 'The harmonic mean of precision and recall. It summarizes their balance at a particular threshold.'],
-  ['What are the reported test metrics?', 'The saved results report precision 0.557, recall 0.727, F1 0.631, ROC-AUC 0.847, PR-AUC 0.665, and accuracy about 0.774.'],
-  ['Why are confidence intervals reported?', 'A score from one test sample has uncertainty. Bootstrap intervals show a range of metric values compatible with resampling that test sample.'],
-  ['How many bootstrap resamples are used?', 'The model metadata records 2,000 resamples for the final metric intervals.'],
-  ['What is XGBoost?', 'A gradient-boosted decision-tree model. It builds trees sequentially, with later trees helping correct errors made by earlier trees.'],
-  ['Why use XGBoost in the deployed system?', 'The saved comparison selects the XGBoost configuration, and the API’s explanation path uses TreeSHAP for that tree model.'],
-  ['What is SHAP?', 'SHAP assigns each input feature a contribution to a model output relative to a baseline prediction.'],
-  ['What is TreeSHAP?', 'A SHAP algorithm specialized for tree models, used here through shap.TreeExplainer.'],
-  ['Does SHAP prove a feature causes churn?', 'No. It explains the model’s association and prediction, not real-world causation. A feature contribution is not proof that changing the feature changes customer behavior.'],
-  ['What does FastAPI do?', 'It provides the Python HTTP API, validates requests using Pydantic schemas, and dispatches prediction and explanation calls.'],
-  ['What does React do?', 'It renders the browser interface, including the customer form and prediction/explanation results.'],
-  ['What does Pydantic do?', 'It validates API request and response structures, including expected customer fields and value constraints.'],
-  ['How does the frontend call the API?', 'The Axios service posts customer input to `/api/v1/predict` and `/api/v1/explain`; Nginx proxies `/api/` traffic to the backend in Docker.'],
-  ['What does Docker Compose do in this project?', 'It describes containers for the frontend, backend, MLflow UI, PostgreSQL, MongoDB, and Redis, plus their ports, network, volumes, and dependencies.'],
-  ['Are prediction logs saved to PostgreSQL or MongoDB?', 'Not currently. Those containers and connection settings exist, but the prediction/explanation application code does not yet write records to them.'],
-  ['What is MLflow used for?', 'The comparison workflow creates an experiment and logs model/strategy parameters and fold/held-out metrics. Runs are viewable through the configured MLflow UI.'],
-  ['What is the purpose of model_metadata.json?', 'It records the model status, data audit, split, comparison, selected threshold, test metrics, confidence intervals, and library versions for inspection and API model-info responses.'],
-  ['What is the purpose of the joblib model file?', 'It stores the fitted preprocessing-and-classifier pipeline that the API loads to make predictions.'],
-  ['What does the health endpoint check?', 'It reports API health and whether the predictor says the model is loaded.'],
-  ['How would you reproduce model training?', 'Use the documented environment, start MLflow as configured, then run `python backend/train_model.py` or execute the training notebook in the documented sequence with the fixed seed.'],
-  ['What tests exist?', 'The backend test suite includes checks for statistical analysis, model comparison/training, schemas, predictor, explainer, configuration, and API behavior.'],
-  ['What are current limitations?', 'The project uses a public historical dataset, has no live customer-data integration, does not persist prediction requests to the declared databases, and its explanations are not causal claims.'],
-  ['What would you improve next?', 'I would wire and test database persistence, add model/data drift monitoring and privacy controls, evaluate fairness and calibration, and validate retention actions with real experiments.'],
+  ['What is the title of your project?', 'The title is “Explainable Predictive Analytics: An MLOps Framework for Transparent Customer Retention.” ChurnXAI is the application name. The title highlights prediction, explanation, and the engineering needed to serve a model reliably.'],
+  ['What is customer churn?', 'Customer churn happens when a customer stops using a company’s service. In this dataset, the label records whether each telecom customer left. The model learns patterns linked with that historical label; it cannot know future behavior with certainty.'],
+  ['What problem does your project address?', 'A company may only notice a customer has left after the event. ChurnXAI tests whether past customer information can provide an earlier risk signal. Staff can use the signal to decide whether a useful retention action is appropriate.'],
+  ['What does “XAI” mean?', 'XAI means Explainable Artificial Intelligence: techniques that make a model’s output easier to inspect. This project uses SHAP to show feature contributions for a customer. The explanation is about the model’s reasoning, not proof of real-world cause.'],
+  ['What dataset does the project use?', 'The repository contains the Telco Customer Churn dataset, commonly distributed through IBM/Kaggle. Its saved metadata reports 7,043 customer rows and 21 original columns. It is a historical teaching dataset, not a live connection to a telecom provider.'],
+  ['What is the target variable?', 'The target is Churn, the answer the model learns to predict. The training code encodes “Yes” as 1 and “No” as 0. The model’s positive-class probability is therefore interpreted as the estimated probability of churn.'],
+  ['What are features?', 'Features are the customer details given to the model, such as contract type, service choices, tenure, and charges. The original customer identifier is not used as a behavioral feature. The pipeline prepares numeric and categorical columns before model fitting.'],
+  ['How many customers churned in the source dataset?', 'The saved metadata reports 1,869 customers labeled “Yes” and 5,174 labeled “No.” Those counts add to 7,043. They also show why the two outcome classes are not equally represented.'],
+  ['Why is class imbalance important here?', 'Non-churners are the majority class, so a model can obtain a seemingly good accuracy by mostly predicting “stay.” That could still miss many customers who churn. We therefore report recall, precision, F1, ROC-AUC, and especially PR-AUC rather than relying on accuracy alone.'],
+  ['What data-cleaning issue did you check?', 'There are 11 TotalCharges cells containing whitespace rather than a numeric value. The audit first verifies that every affected record has tenure zero, which is consistent with a new customer. Only then are those values converted to 0.0.'],
+  ['What statistical tests are used in EDA?', 'Categorical features use a chi-square test with Cramér’s V as an effect size. Numeric features use point-biserial correlation and Cohen’s d. Bootstrap intervals describe uncertainty in effect sizes, while Holm and Benjamini–Hochberg adjust for multiple tests.'],
+  ['What does a Wilson interval describe?', 'A Wilson interval gives a range of plausible values for a population proportion, such as churn prevalence. It is more reliable than a simple normal approximation for proportions. It communicates sampling uncertainty instead of presenting the observed percentage as exact.'],
+  ['Why correct for multiple testing?', 'When many features are tested, some can look significant by chance even if no real association exists. Holm controls the family-wise error rate, while Benjamini–Hochberg controls the expected false-discovery proportion. The analysis reports adjusted values so results are not judged from raw p-values alone.'],
+  ['What is the purpose of a train/test split?', 'The training portion is used to compare and fit models. The separate test portion is kept aside until the final evaluation, so it acts like unseen data. Using the test set to tune the model or threshold would make the final score optimistic.'],
+  ['How large is the locked test set?', 'The saved metadata records 5,634 training rows and 1,409 test rows, an 80/20 split of 7,043 examples. The split is stratified, so both groups retain approximately the same churn share. The test group is reserved for final evaluation.'],
+  ['Which model families were compared?', 'The experiment compares Logistic Regression, Random Forest, XGBoost, and a PyTorch multilayer perceptron. These represent different learning approaches, from a linear classifier to ensembles of trees and a neural network. They are evaluated using the same training split and cross-validation folds.'],
+  ['Which imbalance strategies were compared?', 'Each model family is assessed with no special imbalance handling, class weighting, and SMOTE oversampling. That creates 12 model/strategy configurations. The results indicate whether the added complexity of weighting or synthetic samples improves the validation score.'],
+  ['What is cross-validation?', 'Cross-validation divides the training data into folds, fitting on some folds and checking on another. Repeating this with different folds gives several validation scores instead of one. This makes candidate comparisons less dependent on one lucky train/validation split.'],
+  ['How is data leakage prevented?', 'The test set is split off before model fitting and is not used for selection or threshold tuning. Imputation, scaling, one-hot encoding, and optional SMOTE are fitted within each training fold’s pipeline. Validation rows are transformed by fitted steps but are not used to fit those steps.'],
+  ['What does SMOTE do?', 'SMOTE creates synthetic minority-class examples by interpolating between nearby churn examples. Here it is a pipeline step, so each cross-validation fold creates synthetic samples only from that fold’s training partition. The validation fold and locked test set remain untouched.'],
+  ['What is Nadeau–Bengio correction for?', 'Scores from cross-validation folds are related because their training sets overlap. The Nadeau–Bengio corrected paired t-test increases the uncertainty estimate to account for that dependence. This is more appropriate than pretending every fold score is an independent experiment.'],
+  ['How was the final model choice made?', 'The metadata identifies XGBoost without class weighting or SMOTE as the strongest reported XGBoost setup by repeated-CV PR-AUC. It is also the overall comparison champion in the saved run. That choice preserves compatibility with the project’s TreeSHAP explanation implementation.'],
+  ['Why does the project emphasize PR-AUC?', 'PR-AUC summarizes precision–recall behavior across probability thresholds and focuses on the positive class, churn. This is useful when churn is less common than staying. A PR-AUC value should still be interpreted with its test prevalence and other metrics.'],
+  ['What is a decision threshold?', 'The model produces a probability; the threshold turns it into a class label. At or above the saved threshold, the API predicts churn. The current threshold is about 0.335, so it is lower than the default 0.5 to balance precision and recall for this experiment.'],
+  ['How was the threshold selected?', 'The workflow creates out-of-fold predictions for training rows and searches for the threshold with the best F1. The saved threshold is approximately 0.335. The locked test labels were not used to choose it, which keeps final evaluation more independent.'],
+  ['What does precision mean?', 'Precision asks: of the customers the model flagged as likely to churn, what fraction actually churned in the test labels? Higher precision means fewer false alarms among flagged customers. Its trade-off is that a stricter threshold may miss some real churners.'],
+  ['What does recall mean?', 'Recall asks: of all customers who actually churned, what fraction did the model identify? Higher recall means fewer missed churners. It may also increase false alarms, so business teams need to balance the cost of missed outreach against unnecessary outreach.'],
+  ['What does F1 mean?', 'F1 is the harmonic mean of precision and recall. It gives a single score that is high only when both are reasonably strong. It is useful for choosing the project threshold, but business costs may justify optimizing a different target in a real deployment.'],
+  ['What are the reported test metrics?', 'The saved locked-test results are precision 0.557, recall 0.727, F1 0.631, ROC-AUC 0.847, PR-AUC 0.665, and accuracy about 0.774. The F1 interval is 0.589–0.667, ROC-AUC interval 0.825–0.868, and PR-AUC interval 0.611–0.713.'],
+  ['Why are confidence intervals reported?', 'A test metric depends on the particular sample of customers, so a single number has uncertainty. Bootstrap confidence intervals repeatedly resample test rows to estimate a range of plausible metric values. They do not guarantee that performance on future customers will fall inside the interval.'],
+  ['How many bootstrap resamples are used?', 'The saved evaluation metadata records 2,000 bootstrap resamples for the final test metrics. Each resample is drawn from the held-out test predictions and labels. Percentiles of those resampled scores form the reported 95% intervals.'],
+  ['What is XGBoost?', 'XGBoost is a gradient-boosted decision-tree algorithm. It builds trees in sequence, with later trees improving the combined prediction by correcting earlier errors. It can model non-linear patterns and interactions in customer features.'],
+  ['Why use XGBoost in the deployed system?', 'The saved model comparison selects XGBoost as the best reported configuration, and the API loads that fitted pipeline from the joblib artifact. Tree models also have an efficient SHAP implementation. The actual model name, status, threshold, and metrics are recorded in metadata.'],
+  ['What is SHAP?', 'SHAP assigns feature contributions to a prediction relative to a baseline model output. Positive contributions in this implementation push toward higher churn output; negative contributions push the other way. The prediction page displays top drivers and a waterfall visualization.'],
+  ['What is TreeSHAP, and how is the explanation checked?', 'TreeSHAP is the efficient SHAP method used for tree models through `shap.TreeExplainer`. During artifact generation, the project checks that the baseline plus SHAP contributions, transformed through the sigmoid, matches the XGBoost probability within a small tolerance. This checks additivity, not causal validity.'],
+  ['Does SHAP prove a feature causes churn?', 'No. SHAP explains which inputs influenced this fitted model’s output for a particular example. It does not prove that changing a feature will change whether the person leaves. Causal claims require a suitable study or experiment.'],
+  ['What does FastAPI do?', 'FastAPI exposes the Python backend as HTTP endpoints. Pydantic schemas validate the customer request, authentication dependencies check a signed session and role, and route handlers call prediction/explanation code. The API also provides health and model-information endpoints.'],
+  ['What does React do?', 'React builds the interactive browser pages: dashboard, prediction form, pipeline explanation, project guide, and prediction history. State updates show the response without reloading the page. TypeScript types the inputs and responses exchanged with the API.'],
+  ['What does Pydantic do?', 'Pydantic checks incoming JSON against declared schemas, including required customer features and numeric limits. It also shapes API responses so fields have a consistent format. Authentication and prediction results therefore use explicit contracts rather than arbitrary dictionaries from the browser.'],
+  ['How does one prediction travel through the system?', 'The browser submits one request to `/api/v1/predict-and-explain` through Nginx. FastAPI validates the customer and role, runs the model and SHAP explainer, stores one audit record in PostgreSQL, then returns probability, risk band, drivers, and the waterfall image.'],
+  ['What does Docker Compose do in this project?', 'Docker Compose connects the frontend/Nginx, FastAPI backend, MLflow UI, and PostgreSQL services on a private bridge network. It declares host ports, persistent volumes, environment variables, and health dependencies. MongoDB and Redis are not needed and have been removed.'],
+  ['What is MLflow used for?', 'The training workflow logs its experiment settings and fold/test metrics to the `telco-churn-model-comparison` experiment. The MLflow UI lets you inspect those runs. Its local file store is separate from PostgreSQL, which stores application accounts and prediction history.'],
+  ['How is PostgreSQL implemented in the application?', 'SQLAlchemy models define `users` and `prediction_records`; Alembic applies the initial schema migration before the API starts. Login reads and updates user rows, while the combined prediction endpoint commits its result and SHAP data as one transaction.'],
+  ['What does each PostgreSQL table store?', '`users` stores a UUID, unique username, Argon2id password hash, role, active state, failed-login count, lockout time, and creation time. `prediction_records` links to a user and stores timestamp, model/threshold, probability/risk/class, a feature snapshot, and SHAP JSON.'],
+  ['What are the three roles?', 'Staff can run predictions and view only their own history. Managers are super-admins: they can use the project, review all prediction history, create accounts, see the complete account list, and deactivate other accounts. Deactivation blocks sign-in but preserves audit history; the manager cannot deactivate themselves or the last active manager. Professors can use every project feature and view complete history, but cannot administer accounts.'],
+  ['What happens when a manager removes a user?', 'The account is deactivated, not erased. That person can no longer sign in, while their past prediction records stay connected to their account for audit and review. The system also prevents a manager from deactivating their own account or the final active manager.'],
+  ['How is each role restricted?', 'The website shows only the routes allowed for a role, and the API independently checks permissions. Staff are restricted to prediction and personal history. Manager and professor accounts can view the project and all history; only managers can use the account-creation API. This prevents browser-only restrictions from being bypassed with a direct API call.'],
+  ['How are accounts created and passwords protected?', 'An operator provisions the first manager account with the backend CLI. After signing in, managers can create staff, manager, and professor accounts in the Manage Users page. New passwords must have at least 12 characters and are stored as Argon2id hashes, never as readable text. Five failed login attempts temporarily lock an account.'],
+  ['Why use Alembic database migrations?', 'A migration describes a versioned, reviewable change to database tables. Alembic applies migration `0001_users_predictions` once before the API workers start, so four workers do not race to create the same schema. Future schema changes can be added as later revisions.'],
+  ['How do role-based history permissions work?', 'Every record has a foreign key to the requesting account. Staff history queries are filtered to the signed-in user; managers and professors can review records from every account. Staff cannot open another account’s detail, and list responses do not return saved raw feature snapshots.'],
+  ['What are the main limitations and next improvements?', 'The training data is historical and public, there is no live telecom data feed, and SHAP is not causal. Prediction snapshots need an approved retention/deletion policy, and a real deployment needs HTTPS, secure secrets, backups, monitoring, fairness/calibration checks, and evaluation of actual retention interventions.'],
 ] as const;
 
 const fileGroups = [
@@ -145,6 +149,9 @@ const fileGroups = [
       ['backend/app/main.py', 'Creates the FastAPI application and loads the model when the service starts.'],
       ['backend/app/api/predict.py', 'API route that validates a customer and returns a churn prediction.'],
       ['backend/app/api/explain.py', 'API route that returns feature contributions and a SHAP plot.'],
+      ['backend/app/api/auth.py', 'Handles login and manager-only creation of staff, manager, and professor accounts.'],
+      ['backend/app/api/predictions.py', 'Combines prediction and explanation, saves audit history, and enforces per-role history access.'],
+      ['backend/app/db/models.py', 'Defines PostgreSQL user accounts and saved prediction records.'],
       ['backend/app/ml/predictor.py', 'Loads the model and produces churn probabilities and risk labels.'],
       ['backend/app/ml/explainer.py', 'Builds local SHAP explanations for predictions.'],
       ['backend/app/schemas/', 'Pydantic request and response shapes used to validate API data.'],
@@ -154,13 +161,16 @@ const fileGroups = [
     title: 'Website and operations',
     icon: GitBranch,
     files: [
-      ['frontend/src/pages/', 'Dashboard, prediction, pipeline, and this learning guide.'],
+      ['frontend/src/pages/', 'Dashboard, prediction, history, project guide, and manager user creation.'],
+      ['frontend/src/pages/UserManagement.tsx', 'Manager-only form for creating staff, manager, and professor accounts.'],
+      ['frontend/src/components/RequireAuth.tsx', 'Protects browser routes according to the signed-in user role.'],
+      ['frontend/src/auth/', 'Restores login sessions and shares the current account with the React pages.'],
       ['frontend/src/services/api.ts', 'Connects the website to the FastAPI service.'],
       ['frontend/src/components/Navbar.tsx', 'Shared navigation across the website.'],
       ['reports/metrics/model_evaluation.json', 'Saved test metrics and their bootstrap confidence intervals.'],
       ['reports/metrics/model_comparison.csv', 'Cross-validation results for the compared model configurations.'],
       ['reports/figures/', 'EDA charts, confusion matrix, and global/local SHAP visualizations.'],
-      ['docker-compose.yml', 'Describes the backend, frontend, MLflow, and supporting database/cache containers.'],
+      ['docker-compose.yml', 'Runs the backend, frontend, MLflow, and PostgreSQL containers together.'],
       ['backend/tests/', 'Automated checks for the statistical code, model, API, and data schemas.'],
     ],
   },
@@ -196,7 +206,7 @@ function DiagramCanvas({
 function ArchitectureDiagram() {
   return (
     <DiagramCanvas
-      height={590}
+      height={600}
       label="Detailed architecture showing offline data preparation, model training artifacts, and the online React, Nginx, FastAPI, predictor, explainer, and MLflow services."
       width={1180}
     >
@@ -245,7 +255,7 @@ function ArchitectureDiagram() {
       <rect fill="#fff" height="108" rx="12" stroke="#93c5fd" width="194" x="452" y="354" />
       <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="466" y="382">FastAPI application</text>
       <text fill="#475569" fontSize="11" x="466" y="404">Pydantic · routes · errors</text>
-      <text fill="#475569" fontSize="11" x="466" y="424">/predict · /explain</text>
+      <text fill="#475569" fontSize="11" x="466" y="424">auth · predict/explain · history</text>
       <rect fill="#fff" height="108" rx="12" stroke="#93c5fd" width="188" x="674" y="354" />
       <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="688" y="382">Predictor singleton</text>
       <text fill="#475569" fontSize="11" x="688" y="404">loads joblib at startup</text>
@@ -259,9 +269,13 @@ function ArchitectureDiagram() {
       <text fill="#475569" fontSize="11" x="210" y="371">HTTPS/HTTP page</text>
       <text fill="#475569" fontSize="11" x="421" y="371">JSON request</text>
       <text fill="#0f766e" fontSize="11" x="690" y="456">JSON prediction and explanation return to browser</text>
+      <rect fill="#f0fdfa" height="48" rx="10" stroke="#5eead4" width="250" x="424" y="466" />
+      <text fill="#134e4a" fontSize="12" fontWeight="700" x="442" y="486">PostgreSQL · users + prediction_records</text>
+      <text fill="#475569" fontSize="10" x="442" y="503">login roles, prediction audit, SHAP drivers</text>
+      <path d="M549 462 V458 H549 V466" fill="none" markerEnd="url(#architecture-arrow)" stroke="#0f766e" strokeWidth="2" />
 
-      <rect fill="#fff7ed" height="42" rx="10" stroke="#fdba74" width="1110" x="30" y="540" />
-      <text fill="#9a3412" fontSize="12" fontWeight="700" x="48" y="566">Configured but not application-integrated: PostgreSQL · MongoDB · Redis (Compose services have no prediction-write path in the API).</text>
+      <rect fill="#fff7ed" height="34" rx="10" stroke="#fdba74" width="1110" x="30" y="544" />
+      <text fill="#9a3412" fontSize="11" fontWeight="700" x="48" y="566">MLflow experiment files stay in mlruns/. MongoDB and Redis were removed to keep one application database.</text>
     </DiagramCanvas>
   );
 }
@@ -394,7 +408,7 @@ function PredictionSequenceDiagram() {
 
 function DeploymentDiagram() {
   return (
-    <DiagramCanvas height={510} label="Docker deployment diagram with local browser ports and Docker Compose network services for frontend Nginx, backend FastAPI, MLflow, PostgreSQL, MongoDB, and Redis; database services are marked configured but not used by prediction writes." width={1080}>
+    <DiagramCanvas height={510} label="Docker deployment diagram with local browser ports and Docker Compose network services for frontend Nginx, backend FastAPI, MLflow, and PostgreSQL, with account and prediction tables." width={1080}>
       <defs>
         <marker id="deploy-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
           <path d="M0,0 L8,4 L0,8 z" fill="#475569" />
@@ -423,18 +437,20 @@ function DeploymentDiagram() {
       <text fill="#7c2d12" fontSize="10" x="306" y="279">host :5000 · backed by ./mlruns</text>
       <text fill="#7c2d12" fontSize="10" x="306" y="297">runs logged during training</text>
 
-      <rect fill="#fff" height="75" rx="11" stroke="#cbd5e1" strokeDasharray="5 4" width="208" x="550" y="232" />
-      <text fill="#334155" fontSize="13" fontWeight="700" x="566" y="259">PostgreSQL</text>
-      <text fill="#64748b" fontSize="10" x="566" y="279">host :5432 · persistent volume</text>
-      <text fill="#9a3412" fontSize="10" x="566" y="297">configured; app writes not wired</text>
-      <rect fill="#fff" height="75" rx="11" stroke="#cbd5e1" strokeDasharray="5 4" width="208" x="290" y="337" />
-      <text fill="#334155" fontSize="13" fontWeight="700" x="306" y="364">MongoDB</text>
-      <text fill="#64748b" fontSize="10" x="306" y="384">host :27017 · persistent volume</text>
-      <text fill="#9a3412" fontSize="10" x="306" y="402">configured; app writes not wired</text>
-      <rect fill="#fff" height="75" rx="11" stroke="#cbd5e1" strokeDasharray="5 4" width="208" x="550" y="337" />
-      <text fill="#334155" fontSize="13" fontWeight="700" x="566" y="364">Redis</text>
-      <text fill="#64748b" fontSize="10" x="566" y="384">host :6379 · persistent volume</text>
-      <text fill="#9a3412" fontSize="10" x="566" y="402">configured; not used by request path</text>
+      <rect fill="#f0fdfa" height="75" rx="11" stroke="#5eead4" width="208" x="550" y="232" />
+      <text fill="#134e4a" fontSize="13" fontWeight="700" x="566" y="259">PostgreSQL</text>
+      <text fill="#475569" fontSize="10" x="566" y="279">host :5432 · persistent volume</text>
+      <text fill="#475569" fontSize="10" x="566" y="297">API reads and writes via SQLAlchemy</text>
+      <rect fill="#fff" height="75" rx="11" stroke="#5eead4" width="208" x="290" y="337" />
+      <text fill="#134e4a" fontSize="13" fontWeight="700" x="306" y="364">users table</text>
+      <text fill="#475569" fontSize="10" x="306" y="384">username · password hash · role</text>
+      <text fill="#475569" fontSize="10" x="306" y="402">active status · login lockout</text>
+      <rect fill="#fff" height="75" rx="11" stroke="#5eead4" width="208" x="550" y="337" />
+      <text fill="#134e4a" fontSize="13" fontWeight="700" x="566" y="364">prediction_records</text>
+      <text fill="#475569" fontSize="10" x="566" y="384">owner · time · model · probability</text>
+      <text fill="#475569" fontSize="10" x="566" y="402">input snapshot · SHAP explanation</text>
+      <path d="M654 197 V222" fill="none" markerEnd="url(#deploy-arrow)" stroke="#0f766e" strokeWidth="2" />
+      <path d="M654 307 V328 M498 372 H540" fill="none" markerEnd="url(#deploy-arrow)" stroke="#0f766e" strokeWidth="2" />
 
       <rect fill="#f8fafc" height="355" rx="18" stroke="#cbd5e1" width="273" x="803" y="65" />
       <text fill="#334155" fontSize="13" fontWeight="700" x="823" y="91">Mounted model/data</text>
@@ -448,8 +464,48 @@ function DeploymentDiagram() {
       <text fill="#334155" fontSize="11" fontWeight="700" x="839" y="329">./mlruns → /mlruns</text>
       <text fill="#64748b" fontSize="10" x="839" y="351">experiment files and UI store</text>
       <path d="M758 158 H812" fill="none" markerEnd="url(#deploy-arrow)" stroke="#64748b" strokeWidth="2" />
-      <text fill="#9a3412" fontSize="11" fontWeight="700" x="285" y="459">Solid arrows = used request/service path · dashed-outline database boxes = containers are configured, but not connected to prediction writes.</text>
-      <text fill="#475569" fontSize="10" x="285" y="481">Volumes keep configured data across container restarts; the Compose network lets services resolve one another by service name.</text>
+      <text fill="#134e4a" fontSize="11" fontWeight="700" x="285" y="459">Alembic migrations run before FastAPI starts; authentication and predictions use PostgreSQL on the live request path.</text>
+      <text fill="#475569" fontSize="10" x="285" y="481">Volumes retain database data across restarts. Back up and test restores before replacing a database volume.</text>
+    </DiagramCanvas>
+  );
+}
+
+function DatabaseSchemaDiagram() {
+  return (
+    <DiagramCanvas
+      height={370}
+      label="PostgreSQL entity relationship diagram: a user owns zero or more prediction records; the records store a customer feature snapshot and JSON SHAP explanation."
+      width={1000}
+    >
+      <defs>
+        <marker id="schema-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0f766e" />
+        </marker>
+      </defs>
+      <text fill="#0f172a" fontSize="20" fontWeight="700" x="30" y="34">POSTGRESQL DATA MODEL · one user can request many predictions</text>
+      <rect fill="#eff6ff" height="250" rx="14" stroke="#93c5fd" width="360" x="40" y="64" />
+      <rect fill="#1e40af" height="42" rx="14" width="360" x="40" y="64" />
+      <text fill="#fff" fontSize="16" fontWeight="700" x="60" y="91">users</text>
+      <text fill="#334155" fontSize="12" x="60" y="131">id · UUID primary key</text>
+      <text fill="#334155" fontSize="12" x="60" y="155">username · unique account name</text>
+      <text fill="#334155" fontSize="12" x="60" y="179">password_hash · Argon2id hash only</text>
+      <text fill="#334155" fontSize="12" x="60" y="203">role · staff | manager | professor</text>
+      <text fill="#334155" fontSize="12" x="60" y="227">is_active · failed attempts · locked_until</text>
+      <text fill="#334155" fontSize="12" x="60" y="251">created_at · account creation timestamp</text>
+      <text fill="#334155" fontSize="11" fontWeight="700" x="60" y="289">Provisioned by an operator; there is no public sign-up.</text>
+
+      <rect fill="#f0fdfa" height="250" rx="14" stroke="#5eead4" width="420" x="540" y="64" />
+      <rect fill="#0f766e" height="42" rx="14" width="420" x="540" y="64" />
+      <text fill="#fff" fontSize="16" fontWeight="700" x="560" y="91">prediction_records</text>
+      <text fill="#334155" fontSize="12" x="560" y="131">id · UUID primary key</text>
+      <text fill="#334155" fontSize="12" x="560" y="155">user_id · foreign key → users.id</text>
+      <text fill="#334155" fontSize="12" x="560" y="179">created_at · model name/status · threshold</text>
+      <text fill="#334155" fontSize="12" x="560" y="203">churn_probability · risk band · class</text>
+      <text fill="#334155" fontSize="12" x="560" y="227">input_features · JSON feature snapshot</text>
+      <text fill="#334155" fontSize="12" x="560" y="251">explanation · JSON SHAP contributions</text>
+      <path d="M400 170 H530" fill="none" markerEnd="url(#schema-arrow)" stroke="#0f766e" strokeWidth="2" />
+      <text fill="#0f766e" fontSize="11" fontWeight="700" textAnchor="middle" x="465" y="158">1 user → many records</text>
+      <text fill="#64748b" fontSize="11" x="40" y="344">Foreign keys link an audit record to its creator; an owner/time index makes staff history queries efficient.</text>
     </DiagramCanvas>
   );
 }
@@ -549,10 +605,9 @@ function ProjectGuide() {
               <article className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
                 <h3 className="font-bold text-amber-950">Important honest limitation</h3>
                 <p className="mt-2 text-sm leading-6 text-amber-900">
-                  Docker Compose includes PostgreSQL, MongoDB, and Redis, but the app’s
-                  prediction code does not currently save requests or explanations to
-                  those databases. Container setup is not the same thing as database
-                  integration.
+                  PostgreSQL now stores individual account roles and prediction audit
+                  records. MongoDB and Redis have been removed; MLflow tracking remains
+                  a separate experiment store rather than a second application database.
                 </p>
               </article>
             </div>
@@ -813,6 +868,99 @@ function ProjectGuide() {
           </section>
         )}
 
+        {activeSection === 'accounts' && (
+          <section className="space-y-7">
+            <SectionHeading
+              eyebrow="Accounts and PostgreSQL"
+              title="One database for logins, permissions, and prediction history"
+              text="PostgreSQL is the application's system of record. A login identifies a person, the role controls what that person can do, and a prediction is saved as one auditable event."
+            />
+            <div className="flex gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-5">
+              <KeyRound aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-sky-700" />
+              <p className="text-sm leading-6 text-sky-950">
+                MongoDB and Redis are removed. This project has structured account
+                records and audit rows, so a single relational database is easier to
+                learn, back up, secure, and explain. MLflow still stores experiment
+                tracking separately in its own <code>mlruns/</code> file store.
+              </p>
+            </div>
+            <DatabaseSchemaDiagram />
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <h3 className="bg-slate-50 px-5 py-4 font-bold text-slate-900">What each role is allowed to do</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[650px] text-left text-sm">
+                  <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                    <tr><th className="px-5 py-3">Role</th><th className="px-5 py-3">Project guide</th><th className="px-5 py-3">Predictions</th><th className="px-5 py-3">History</th><th className="px-5 py-3">Create accounts</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    <tr><td className="px-5 py-4 font-bold">Staff</td><td className="px-5 py-4">Blocked</td><td className="px-5 py-4">Can run</td><td className="px-5 py-4">Own records only</td><td className="px-5 py-4">Manager only</td></tr>
+                    <tr><td className="px-5 py-4 font-bold">Manager</td><td className="px-5 py-4">Can read</td><td className="px-5 py-4">Can run</td><td className="px-5 py-4">All account history</td><td className="px-5 py-4">Can create every role</td></tr>
+                    <tr><td className="px-5 py-4 font-bold">Professor</td><td className="px-5 py-4">Can read</td><td className="px-5 py-4">Can run</td><td className="px-5 py-4">All account history</td><td className="px-5 py-4">Blocked</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="border-t border-slate-100 px-5 py-4 text-xs leading-5 text-slate-500">
+                Permissions are checked in both the website routes and the API. Hiding a
+                button alone is not security: someone could otherwise call an API directly.
+              </p>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <article className="rounded-2xl border border-slate-200 bg-white p-6">
+                <h3 className="font-bold text-slate-900">What happens during login?</h3>
+                <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  <li>1. The API looks up the lowercase username in PostgreSQL.</li>
+                  <li>2. Argon2id verifies the entered password against a one-way password hash; the original password is never stored.</li>
+                  <li>3. The API issues a signed, eight-hour session in an HttpOnly, SameSite=Strict cookie.</li>
+                  <li>4. Every protected API request validates the session and loads the user's current role from PostgreSQL.</li>
+                  <li>5. Five failed attempts temporarily lock the account; errors do not reveal whether a username exists.</li>
+                </ol>
+              </article>
+              <article className="rounded-2xl border border-slate-200 bg-white p-6">
+                <h3 className="font-bold text-slate-900">What happens when a prediction is requested?</h3>
+                <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  <li>1. FastAPI confirms the account is signed in as staff, manager, or professor and validates the customer form.</li>
+                  <li>2. The loaded model produces a probability; TreeSHAP produces the matching explanation.</li>
+                  <li>3. In one database transaction, SQLAlchemy writes the owner, time, model, score, threshold, feature snapshot, and SHAP JSON.</li>
+                  <li>4. The UI gets the result only after the audit row commits successfully.</li>
+                  <li>5. Staff history filters to its owner; managers and professors can review all accounts’ history. Only managers can create accounts.</li>
+                </ol>
+              </article>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h3 className="font-bold text-slate-900">Set it up locally with Docker Compose</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Make a private root <code>.env</code> file from the example, replace the
+                database password and JWT signing key with random values, and never
+                commit that file. The Compose startup applies the versioned Alembic
+                migration before the API workers begin.
+              </p>
+              <pre className="mt-4 overflow-x-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-teal-100"><code>{`Copy-Item .env.example .env
+# Edit .env and replace both placeholder secrets.
+docker compose up --build -d
+
+# Bootstrap the first manager; this command securely prompts for a password.
+docker compose exec backend python -m app.cli create-user --username manager1 --role manager
+# Sign in as manager1, then use Manage Users to create the other accounts.`}</code></pre>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Open the site and sign in as the bootstrap manager. The manager can
+                create the other roles from Manage Users; there is no public sign-up
+                page, so visitors cannot grant themselves manager permissions.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <h3 className="font-bold text-amber-950">Data privacy and operational limits</h3>
+              <p className="mt-2 text-sm leading-6 text-amber-900">
+                The audit table stores the submitted service/billing feature snapshot
+                and explanation, but the current form does not ask for name, email,
+                or customer ID. Treat the snapshots as sensitive business data,
+                restrict database access, set an explicit retention/deletion policy,
+                rotate backups, and use HTTPS with Secure cookies before real deployment.
+                History currently has no automatic expiry job.
+              </p>
+            </div>
+          </section>
+        )}
+
         {activeSection === 'viva' && (
           <section className="space-y-7">
             <SectionHeading
@@ -844,10 +992,12 @@ function ProjectGuide() {
                   will leave. A person should review the result.”
                 </p>
                 <p>
-                  “The project also records model experiment results with MLflow and
-                  uses Docker Compose to run the services. Database containers are
-                  configured, but saving prediction requests into those databases is
-                  future work.”
+                  “The project records training experiments in MLflow and uses Docker
+                  Compose to run the services. PostgreSQL stores individual accounts
+                  and successful prediction/explanation records. Staff can make
+                  predictions and see only their own history. Managers can create
+                  accounts and see all history. Professors can use the project but
+                  cannot create users. MongoDB and Redis are not needed here.”
                 </p>
               </blockquote>
             </article>
