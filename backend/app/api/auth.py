@@ -4,20 +4,22 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pwdlib import PasswordHash
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
 from app.db.dependencies import CurrentUser, DbSession, UserRole, require_roles
-from app.db.models import User
+from app.db.models import PredictionRecord, User
 from app.schemas.auth import (
     CreateUserRequest,
     LoginRequest,
     ManagedUserListResponse,
     ManagedUserResponse,
+    PermanentDeleteRequest,
+    ResetUserPasswordRequest,
     UserResponse,
 )
-from app.security import create_session_token, verify_password
+from app.security import create_session_token, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 password_hasher = PasswordHash.recommended()
@@ -184,5 +186,96 @@ def deactivate_user(
                 detail="The last active manager account cannot be deactivated.",
             )
 
-    user.is_active = False
+    if user.is_active:
+        user.is_active = False
+        user.session_version += 1
+    db.commit()
+
+
+@router.post("/users/{user_id}/reactivate", status_code=status.HTTP_204_NO_CONTENT)
+def reactivate_user(
+    user_id: UUID,
+    db: DbSession,
+    _manager: User = Depends(manager_only),
+) -> None:
+    """Restore sign-in access to an existing inactive account."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account not found.",
+        )
+    user.is_active = True
+    db.commit()
+
+
+@router.post("/users/{user_id}/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+def reset_user_password(
+    user_id: UUID,
+    request: ResetUserPasswordRequest,
+    db: DbSession,
+    manager: User = Depends(manager_only),
+) -> None:
+    """Set a new password and invalidate the account's existing sessions."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account not found.",
+        )
+    if user.id == manager.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot reset your own password from user management.",
+        )
+    user.password_hash = hash_password(request.password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.session_version += 1
+    db.commit()
+
+
+@router.post("/users/{user_id}/permanent-delete", status_code=status.HTTP_204_NO_CONTENT)
+def permanently_delete_user(
+    user_id: UUID,
+    request: PermanentDeleteRequest,
+    db: DbSession,
+    manager: User = Depends(manager_only),
+) -> None:
+    """Remove an account, either anonymizing or deleting its prediction history."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account not found.",
+        )
+    if user.id == manager.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot delete your own manager account.",
+        )
+
+    if user.role == UserRole.MANAGER.value and user.is_active:
+        active_managers = db.scalars(
+            select(User)
+            .where(User.role == UserRole.MANAGER.value, User.is_active.is_(True))
+            .order_by(User.id)
+            .with_for_update()
+        ).all()
+        if len(active_managers) <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The last active manager account cannot be deleted.",
+            )
+
+    records = delete(PredictionRecord).where(PredictionRecord.user_id == user.id)
+    if request.history_action == "anonymize":
+        db.execute(
+            update(PredictionRecord)
+            .where(PredictionRecord.user_id == user.id)
+            .values(user_id=None)
+        )
+    else:
+        db.execute(records)
+    db.delete(user)
     db.commit()

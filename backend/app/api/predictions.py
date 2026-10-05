@@ -109,7 +109,7 @@ def prediction_history(
         UserRole.PROFESSOR.value,
     }
     if organization_view:
-        statement = select(PredictionRecord, User.username).join(
+        statement = select(PredictionRecord, User.username).outerjoin(
             User, User.id == PredictionRecord.user_id
         )
         count_statement = select(func.count(PredictionRecord.id))

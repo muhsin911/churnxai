@@ -70,30 +70,38 @@ short-lived signed HttpOnly cookie; passwords are stored as Argon2id hashes. Fiv
 failed password attempts temporarily lock an account. Set `AUTH_COOKIE_SECURE=true`
 when serving the site over HTTPS.
 
-Managers can also see the total account count and each account's role, status, and
-creation date. Removing access deactivates an account instead of deleting its row,
-so existing prediction audit history remains linked and available to managers and
-professors. A manager cannot deactivate their own account or the last active
-manager; create another manager first if one needs to be retired.
+Managers can see account roles, active status, and creation dates; reset passwords
+for other accounts; and reactivate deactivated accounts. Existing sessions are
+invalidated when an account is deactivated or its password is reset.
+
+For account removal, managers can choose between reversible deactivation,
+permanent account deletion with prediction history unlinked from the username, or
+permanent deletion of both the account and its prediction history. Unlinked history
+still contains its customer-feature snapshot and explanation, so this is not a
+promise that all retained data is anonymous or safe for every privacy policy.
+Permanent deletion cannot be undone. Managers cannot remove their own account or
+the last active manager.
 
 ### What PostgreSQL stores
 
 - `users`: UUID, unique username, Argon2id password hash, role, active status,
   failed-login count, lockout timestamp, and creation time.
-- `prediction_records`: UUID, requesting user, timestamp, model/version, probability,
+- `prediction_records`: UUID, optional requesting user, timestamp, model/version, probability,
   risk band, predicted class, decision threshold, submitted feature snapshot, and
   JSON SHAP explanation.
 
 The combined prediction endpoint commits the result and explanation as one audit
 record before returning the response. Staff history is scoped to its owner; managers
-and professors can review all account summaries. The history response deliberately
+and professors can review all account summaries, including unlinked history. The history response deliberately
 excludes raw customer feature snapshots. Those snapshots are still stored for auditability, so
 restrict database access and establish a retention/deletion policy before using real
 customer data. The project does not yet have automatic expiry.
 
 SQLAlchemy defines the database models; Alembic revision
 `backend/migrations/versions/0001_users_and_prediction_records.py` creates the
-schema. Docker runs `alembic upgrade head` before Uvicorn workers start. Add future
+initial schema, and `0002_account_lifecycle.py` adds session invalidation and allows
+prediction history to be retained without its deleted account link. Docker runs
+`alembic upgrade head` before Uvicorn workers start. Add future
 schema changes as new migration revisions; do not delete the persistent PostgreSQL
 volume to apply a schema change.
 

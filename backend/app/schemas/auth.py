@@ -26,6 +26,18 @@ class CreateUserRequest(BaseModel):
     role: Literal["staff", "manager", "professor"]
 
 
+class ResetUserPasswordRequest(BaseModel):
+    """Replacement password set by a manager."""
+
+    password: str = Field(min_length=12, max_length=256)
+
+
+class PermanentDeleteRequest(BaseModel):
+    """Choose how the account's prediction history is handled."""
+
+    history_action: Literal["anonymize", "delete"]
+
+
 class UserResponse(BaseModel):
     """Safe user identity returned to the frontend."""
 

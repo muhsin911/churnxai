@@ -43,7 +43,11 @@ def get_current_user(request: Request, db: DbSession) -> User:
         raise unauthorized from None
 
     user = db.get(User, user_id)
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or payload.get("session_version", 0) != user.session_version
+    ):
         raise unauthorized
     return user
 

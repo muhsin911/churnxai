@@ -59,6 +59,23 @@ export const deactivateUser = async (userId: string): Promise<void> => {
   await api.delete(`/auth/users/${userId}`);
 };
 
+export const reactivateUser = async (userId: string): Promise<void> => {
+  await api.post(`/auth/users/${userId}/reactivate`);
+};
+
+export const resetUserPassword = async (userId: string, password: string): Promise<void> => {
+  await api.post(`/auth/users/${userId}/reset-password`, { password });
+};
+
+export const permanentlyDeleteUser = async (
+  userId: string,
+  historyAction: 'anonymize' | 'delete',
+): Promise<void> => {
+  await api.post(`/auth/users/${userId}/permanent-delete`, {
+    history_action: historyAction,
+  });
+};
+
 export const logout = async (): Promise<void> => {
   await api.post('/auth/logout');
 };

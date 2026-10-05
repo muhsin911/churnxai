@@ -22,9 +22,14 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_session_token(user: User) -> str:
-    """Create a signed session token containing only the user ID and expiry."""
+    """Create a signed session token tied to this account's current session version."""
     return jwt.encode(
-        {"sub": str(user.id), "exp": session_expiry(), "iat": datetime.now(timezone.utc)},
+        {
+            "sub": str(user.id),
+            "session_version": user.session_version,
+            "exp": session_expiry(),
+            "iat": datetime.now(timezone.utc),
+        },
         settings.JWT_SECRET_KEY,
         algorithm="HS256",
     )

@@ -334,3 +334,165 @@ def test_deactivating_unknown_account_returns_not_found(client, database_seed, a
     response = client.delete("/api/v1/auth/users/00000000-0000-0000-0000-000000000000")
 
     assert response.status_code == 404
+
+
+def test_manager_can_reactivate_deactivated_account(
+    client, database_seed, authenticate, db_session
+):
+    staff = db_session.get(User, database_seed["staff"].id)
+    staff.is_active = False
+    db_session.commit()
+    authenticate(client, database_seed["manager"])
+
+    response = client.post(f"/api/v1/auth/users/{staff.id}/reactivate")
+
+    assert response.status_code == 204
+    db_session.refresh(staff)
+    assert staff.is_active is True
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "staff_test", "password": "testing-password-123"},
+    )
+    assert login_response.status_code == 200
+
+
+def test_reactivation_does_not_restore_pre_deactivation_session(
+    client, database_seed, authenticate
+):
+    staff = database_seed["staff"]
+    authenticate(client, staff)
+    old_token = client.cookies.get("churnxai_session", path="/api/v1")
+    assert old_token is not None
+    authenticate(client, database_seed["manager"])
+
+    assert client.delete(f"/api/v1/auth/users/{staff.id}").status_code == 204
+    assert client.post(f"/api/v1/auth/users/{staff.id}/reactivate").status_code == 204
+
+    client.cookies.clear()
+    client.cookies.set("churnxai_session", old_token, path="/api/v1")
+    assert client.get("/api/v1/auth/me").status_code == 401
+
+
+def test_manager_password_reset_invalidates_old_password_and_sessions(
+    client, database_seed, authenticate
+):
+    staff = database_seed["staff"]
+    authenticate(client, staff)
+    old_token = client.cookies.get("churnxai_session", path="/api/v1")
+    assert old_token is not None
+    authenticate(client, database_seed["manager"])
+
+    response = client.post(
+        f"/api/v1/auth/users/{staff.id}/reset-password",
+        json={"password": "a-new-secure-password"},
+    )
+    assert response.status_code == 204
+
+    assert client.post(
+        "/api/v1/auth/login",
+        json={"username": "staff_test", "password": "testing-password-123"},
+    ).status_code == 401
+    assert client.post(
+        "/api/v1/auth/login",
+        json={"username": "staff_test", "password": "a-new-secure-password"},
+    ).status_code == 200
+
+    client.cookies.clear()
+    client.cookies.set("churnxai_session", old_token, path="/api/v1")
+    assert client.get("/api/v1/auth/me").status_code == 401
+
+
+def test_only_managers_can_reactivate_and_reset_password(
+    client, database_seed, authenticate
+):
+    staff = database_seed["staff"]
+    for role in ("staff", "professor"):
+        authenticate(client, database_seed[role])
+        assert client.post(f"/api/v1/auth/users/{staff.id}/reactivate").status_code == 403
+        assert client.post(
+            f"/api/v1/auth/users/{staff.id}/reset-password",
+            json={"password": "a-new-secure-password"},
+        ).status_code == 403
+        assert client.post(
+            f"/api/v1/auth/users/{staff.id}/permanent-delete",
+            json={"history_action": "delete"},
+        ).status_code == 403
+
+
+def test_manager_cannot_reset_own_password_from_user_management(
+    client, database_seed, authenticate
+):
+    manager = database_seed["manager"]
+    authenticate(client, manager)
+
+    response = client.post(
+        f"/api/v1/auth/users/{manager.id}/reset-password",
+        json={"password": "a-new-secure-password"},
+    )
+
+    assert response.status_code == 409
+
+
+def test_manager_can_delete_account_and_anonymize_prediction_history(
+    client, database_seed, authenticate, db_session
+):
+    record = _record(database_seed["staff"], VALID_CUSTOMER)
+    db_session.add(record)
+    db_session.commit()
+    staff_id = database_seed["staff"].id
+    record_id = record.id
+    authenticate(client, database_seed["manager"])
+
+    response = client.post(
+        f"/api/v1/auth/users/{staff_id}/permanent-delete",
+        json={"history_action": "anonymize"},
+    )
+
+    assert response.status_code == 204
+    db_session.expire_all()
+    assert db_session.get(User, staff_id) is None
+    retained = db_session.get(PredictionRecord, record_id)
+    assert retained is not None
+    assert retained.user_id is None
+
+    history = client.get("/api/v1/predictions")
+    assert history.status_code == 200
+    assert history.json()["total"] == 1
+    assert history.json()["items"][0]["id"] == str(record_id)
+    assert "username" not in history.json()["items"][0]
+
+
+def test_manager_can_delete_account_and_all_prediction_history(
+    client, database_seed, authenticate, db_session
+):
+    record = _record(database_seed["staff"], VALID_CUSTOMER)
+    db_session.add(record)
+    db_session.commit()
+    staff_id = database_seed["staff"].id
+    record_id = record.id
+    authenticate(client, database_seed["manager"])
+
+    response = client.post(
+        f"/api/v1/auth/users/{staff_id}/permanent-delete",
+        json={"history_action": "delete"},
+    )
+
+    assert response.status_code == 204
+    db_session.expire_all()
+    assert db_session.get(User, staff_id) is None
+    assert db_session.query(PredictionRecord).filter_by(id=record_id).first() is None
+
+
+def test_manager_cannot_permanently_delete_own_account(
+    client, database_seed, authenticate
+):
+    manager = database_seed["manager"]
+    authenticate(client, manager)
+
+    response = client.post(
+        f"/api/v1/auth/users/{manager.id}/permanent-delete",
+        json={"history_action": "delete"},
+    )
+
+    assert response.status_code == 409
