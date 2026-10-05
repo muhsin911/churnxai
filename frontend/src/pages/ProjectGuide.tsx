@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   BookOpen,
   Boxes,
@@ -21,7 +21,7 @@ const sections = [
   { id: 'terms', label: 'Tech words', icon: BookOpen },
   { id: 'implementation', label: 'How it works', icon: Braces },
   { id: 'files', label: 'File guide', icon: FileText },
-  { id: 'viva', label: 'Viva prep', icon: CircleHelp },
+  { id: 'viva', label: 'Viva', icon: CircleHelp },
 ] as const;
 
 type GuideSection = (typeof sections)[number]['id'];
@@ -66,6 +66,59 @@ const glossary = [
   ['MLOps', 'Practices and tools for building, tracking, deploying, and maintaining machine-learning systems reliably.'],
   ['API', 'A defined way for two programs to ask each other for information. Here, the website asks the Python service for predictions.'],
   ['Docker Compose', 'Starts the project’s containers together using one configuration file.'],
+] as const;
+
+const vivaQuestions = [
+  ['What is the title of your project?', '“Explainable Predictive Analytics: An MLOps Framework for Transparent Customer Retention.” The application is called ChurnXAI.'],
+  ['What is customer churn?', 'Customer churn means a customer stops using a company’s service. In this dataset, the target records whether a telecom customer left.'],
+  ['What problem does your project address?', 'It explores whether past customer information can help identify customers who may churn, so staff can review the risk and consider retention support.'],
+  ['What does “XAI” mean?', 'Explainable Artificial Intelligence: techniques that help people understand how a model reached an output. Here, SHAP is used.'],
+  ['What dataset does the project use?', 'The IBM/Kaggle Telco Customer Churn dataset in the repository. It contains 7,043 customer rows and 21 original columns.'],
+  ['What is the target variable?', 'Churn. The training code encodes it as 1 for “Yes, churned” and 0 for “No, stayed.”'],
+  ['What are features?', 'The customer attributes supplied to the model, such as tenure, contract type, services, and charges.'],
+  ['How many customers churned in the source dataset?', 'The saved metadata reports 1,869 “Yes” cases and 5,174 “No” cases.'],
+  ['Why is class imbalance important here?', 'There are fewer churners than non-churners. A model can score well on accuracy by mostly predicting the larger class, while still missing churners.'],
+  ['What data-cleaning issue did you check?', 'There are 11 whitespace-only TotalCharges values. The audit verifies that all 11 have tenure zero before setting TotalCharges to 0.0.'],
+  ['What statistical tests are used in EDA?', 'Chi-square with Cramér’s V for categorical features, and point-biserial correlation with Cohen’s d for numeric features.'],
+  ['What does a Wilson interval describe?', 'It gives a plausible range for the population proportion based on the observed churn share, rather than presenting that share as exact.'],
+  ['Why correct for multiple testing?', 'Testing many features increases the chance of false positives. Holm and Benjamini–Hochberg adjustments account for that family of tests.'],
+  ['What is the purpose of a train/test split?', 'The training portion is used to fit/select the model. A separate test portion is held back for a final estimate of performance on unseen examples.'],
+  ['How large is the locked test set?', 'The metadata records 5,634 training rows and 1,409 test rows after a stratified 80/20 split.'],
+  ['Which model families were compared?', 'Logistic Regression, Random Forest, XGBoost, and a PyTorch multilayer perceptron.'],
+  ['Which imbalance strategies were compared?', 'No special handling, class weighting, and SMOTE oversampling.'],
+  ['What is cross-validation?', 'It trains and evaluates on several different folds of training data, giving a more stable comparison than one validation split.'],
+  ['How is data leakage prevented?', 'The test set is held out, and preprocessing and SMOTE are fitted inside each training pipeline/fold rather than on the complete dataset first.'],
+  ['What does SMOTE do?', 'It creates synthetic minority-class training points by interpolating between nearby minority examples. It is only applied in the fold’s training path.'],
+  ['What is Nadeau–Bengio correction for?', 'It adjusts a paired comparison for dependence caused by overlapping cross-validation training sets, avoiding an overly optimistic ordinary t-test.'],
+  ['How was the final model choice made?', 'The model-comparison artifact reports XGBoost with no imbalance adjustment as both the overall CV champion and selected deployment configuration, based on mean CV PR-AUC.'],
+  ['Why does the project emphasize PR-AUC?', 'Precision–recall performance focuses on the positive class and is informative when churners are the minority class.'],
+  ['What is a decision threshold?', 'It is the probability cutoff that turns a probability into a predicted class. The saved model uses approximately 0.335.'],
+  ['How was the threshold selected?', 'The metadata says maximum F1 on five-fold out-of-fold training predictions; the locked test set did not choose the threshold.'],
+  ['What does precision mean?', 'Among customers predicted to churn, the fraction who actually churned.'],
+  ['What does recall mean?', 'Among customers who actually churned, the fraction the model successfully identified.'],
+  ['What does F1 mean?', 'The harmonic mean of precision and recall. It summarizes their balance at a particular threshold.'],
+  ['What are the reported test metrics?', 'The saved results report precision 0.557, recall 0.727, F1 0.631, ROC-AUC 0.847, PR-AUC 0.665, and accuracy about 0.774.'],
+  ['Why are confidence intervals reported?', 'A score from one test sample has uncertainty. Bootstrap intervals show a range of metric values compatible with resampling that test sample.'],
+  ['How many bootstrap resamples are used?', 'The model metadata records 2,000 resamples for the final metric intervals.'],
+  ['What is XGBoost?', 'A gradient-boosted decision-tree model. It builds trees sequentially, with later trees helping correct errors made by earlier trees.'],
+  ['Why use XGBoost in the deployed system?', 'The saved comparison selects the XGBoost configuration, and the API’s explanation path uses TreeSHAP for that tree model.'],
+  ['What is SHAP?', 'SHAP assigns each input feature a contribution to a model output relative to a baseline prediction.'],
+  ['What is TreeSHAP?', 'A SHAP algorithm specialized for tree models, used here through shap.TreeExplainer.'],
+  ['Does SHAP prove a feature causes churn?', 'No. It explains the model’s association and prediction, not real-world causation. A feature contribution is not proof that changing the feature changes customer behavior.'],
+  ['What does FastAPI do?', 'It provides the Python HTTP API, validates requests using Pydantic schemas, and dispatches prediction and explanation calls.'],
+  ['What does React do?', 'It renders the browser interface, including the customer form and prediction/explanation results.'],
+  ['What does Pydantic do?', 'It validates API request and response structures, including expected customer fields and value constraints.'],
+  ['How does the frontend call the API?', 'The Axios service posts customer input to `/api/v1/predict` and `/api/v1/explain`; Nginx proxies `/api/` traffic to the backend in Docker.'],
+  ['What does Docker Compose do in this project?', 'It describes containers for the frontend, backend, MLflow UI, PostgreSQL, MongoDB, and Redis, plus their ports, network, volumes, and dependencies.'],
+  ['Are prediction logs saved to PostgreSQL or MongoDB?', 'Not currently. Those containers and connection settings exist, but the prediction/explanation application code does not yet write records to them.'],
+  ['What is MLflow used for?', 'The comparison workflow creates an experiment and logs model/strategy parameters and fold/held-out metrics. Runs are viewable through the configured MLflow UI.'],
+  ['What is the purpose of model_metadata.json?', 'It records the model status, data audit, split, comparison, selected threshold, test metrics, confidence intervals, and library versions for inspection and API model-info responses.'],
+  ['What is the purpose of the joblib model file?', 'It stores the fitted preprocessing-and-classifier pipeline that the API loads to make predictions.'],
+  ['What does the health endpoint check?', 'It reports API health and whether the predictor says the model is loaded.'],
+  ['How would you reproduce model training?', 'Use the documented environment, start MLflow as configured, then run `python backend/train_model.py` or execute the training notebook in the documented sequence with the fixed seed.'],
+  ['What tests exist?', 'The backend test suite includes checks for statistical analysis, model comparison/training, schemas, predictor, explainer, configuration, and API behavior.'],
+  ['What are current limitations?', 'The project uses a public historical dataset, has no live customer-data integration, does not persist prediction requests to the declared databases, and its explanations are not causal claims.'],
+  ['What would you improve next?', 'I would wire and test database persistence, add model/data drift monitoring and privacy controls, evaluate fairness and calibration, and validate retention actions with real experiments.'],
 ] as const;
 
 const fileGroups = [
@@ -113,57 +166,291 @@ const fileGroups = [
   },
 ];
 
-function ArchitectureDiagram() {
+function DiagramCanvas({
+  label,
+  children,
+  width,
+  height,
+}: {
+  label: string;
+  children: ReactNode;
+  width: number;
+  height: number;
+}) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
       <svg
-        aria-label="Architecture diagram: CSV and notebooks create a saved model; the React website sends customer data to the FastAPI backend, which returns a prediction and SHAP explanation."
-        className="mx-auto h-auto min-w-[760px] max-w-full"
+        aria-label={label}
+        className="mx-auto h-auto max-w-none"
         role="img"
-        viewBox="0 0 1000 490"
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
       >
-        <defs>
-          <marker id="guide-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
-            <path d="M0,0 L8,4 L0,8 z" fill="#64748b" />
-          </marker>
-        </defs>
-        <text fill="#0f172a" fontSize="19" fontWeight="700" x="40" y="38">A. Build the model (offline)</text>
-        <rect fill="#f0fdfa" height="94" rx="14" stroke="#99f6e4" width="210" x="40" y="58" />
-        <text fill="#115e59" fontSize="16" fontWeight="700" x="62" y="91">Telco CSV</text>
-        <text fill="#475569" fontSize="13" x="62" y="116">7,043 customer rows</text>
-        <rect fill="#f0fdfa" height="94" rx="14" stroke="#99f6e4" width="230" x="340" y="58" />
-        <text fill="#115e59" fontSize="16" fontWeight="700" x="365" y="91">Analysis + training</text>
-        <text fill="#475569" fontSize="13" x="365" y="116">clean · compare · explain</text>
-        <rect fill="#f0fdfa" height="94" rx="14" stroke="#99f6e4" width="260" x="660" y="58" />
-        <text fill="#115e59" fontSize="16" fontWeight="700" x="685" y="91">Saved model + metadata</text>
-        <text fill="#475569" fontSize="13" x="685" y="116">pipeline.joblib · metadata.json</text>
-        <path d="M250 105 H330" fill="none" markerEnd="url(#guide-arrow)" stroke="#64748b" strokeWidth="2" />
-        <path d="M570 105 H650" fill="none" markerEnd="url(#guide-arrow)" stroke="#64748b" strokeWidth="2" />
-        <text fill="#0f172a" fontSize="19" fontWeight="700" x="40" y="205">B. Make and explain a prediction (when used)</text>
-        <rect fill="#eff6ff" height="104" rx="14" stroke="#bfdbfe" width="210" x="40" y="226" />
-        <text fill="#1e40af" fontSize="16" fontWeight="700" x="64" y="260">React website</text>
-        <text fill="#475569" fontSize="13" x="64" y="284">customer form + results</text>
-        <rect fill="#eff6ff" height="104" rx="14" stroke="#bfdbfe" width="220" x="340" y="226" />
-        <text fill="#1e40af" fontSize="16" fontWeight="700" x="364" y="260">FastAPI</text>
-        <text fill="#475569" fontSize="13" x="364" y="284">checks request fields</text>
-        <rect fill="#eff6ff" height="104" rx="14" stroke="#bfdbfe" width="220" x="650" y="226" />
-        <text fill="#1e40af" fontSize="16" fontWeight="700" x="673" y="260">Model + SHAP</text>
-        <text fill="#475569" fontSize="13" x="673" y="284">probability + reasons</text>
-        <path d="M250 278 H330" fill="none" markerEnd="url(#guide-arrow)" stroke="#64748b" strokeWidth="2" />
-        <path d="M560 278 H640" fill="none" markerEnd="url(#guide-arrow)" stroke="#64748b" strokeWidth="2" />
-        <path d="M650 318 H580" fill="none" markerEnd="url(#guide-arrow)" stroke="#64748b" strokeWidth="2" />
-        <path d="M340 318 H260" fill="none" markerEnd="url(#guide-arrow)" stroke="#64748b" strokeWidth="2" />
-        <text fill="#64748b" fontSize="12" x="269" y="264">customer details</text>
-        <text fill="#64748b" fontSize="12" x="561" y="306">request</text>
-        <text fill="#64748b" fontSize="12" x="561" y="343">result</text>
-        <text fill="#64748b" fontSize="12" x="262" y="343">result shown</text>
-        <rect fill="#fff7ed" height="74" rx="12" stroke="#fed7aa" width="920" x="40" y="380" />
-        <text fill="#9a3412" fontSize="14" fontWeight="700" x="62" y="410">Experiment records:</text>
-        <text fill="#7c2d12" fontSize="13" x="210" y="410">MLflow runs are stored in mlruns/ and viewed with the MLflow UI.</text>
-        <text fill="#7c2d12" fontSize="12" x="62" y="435">PostgreSQL, MongoDB, and Redis containers are configured in Docker Compose; application-level persistence is not wired yet.</text>
+        {children}
       </svg>
       <p className="mt-3 text-center text-xs text-slate-500">Scroll sideways on a small screen to see the full diagram.</p>
     </div>
+  );
+}
+
+function ArchitectureDiagram() {
+  return (
+    <DiagramCanvas
+      height={590}
+      label="Detailed architecture showing offline data preparation, model training artifacts, and the online React, Nginx, FastAPI, predictor, explainer, and MLflow services."
+      width={1180}
+    >
+      <defs>
+        <marker id="architecture-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+          <path d="M0,0 L8,4 L0,8 z" fill="#475569" />
+        </marker>
+        <marker id="architecture-return" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0f766e" />
+        </marker>
+      </defs>
+      <text fill="#0f172a" fontSize="20" fontWeight="700" x="34" y="36">OFFLINE: data science and model creation</text>
+      <rect fill="#f8fafc" height="204" rx="18" stroke="#cbd5e1" width="1110" x="30" y="52" />
+      <rect fill="#f0fdfa" height="108" rx="12" stroke="#5eead4" width="184" x="48" y="85" />
+      <text fill="#134e4a" fontSize="15" fontWeight="700" x="64" y="115">Raw Telco CSV</text>
+      <text fill="#475569" fontSize="12" x="64" y="140">7,043 rows · 21 columns</text>
+      <text fill="#475569" fontSize="12" x="64" y="160">Churn is the label</text>
+      <rect fill="#f0fdfa" height="108" rx="12" stroke="#5eead4" width="214" x="266" y="85" />
+      <text fill="#134e4a" fontSize="15" fontWeight="700" x="282" y="115">Audit + EDA</text>
+      <text fill="#475569" fontSize="12" x="282" y="140">cleaning · statistics</text>
+      <text fill="#475569" fontSize="12" x="282" y="160">clean CSV + relevance CSV</text>
+      <rect fill="#f0fdfa" height="108" rx="12" stroke="#5eead4" width="214" x="514" y="85" />
+      <text fill="#134e4a" fontSize="15" fontWeight="700" x="530" y="115">Model comparison</text>
+      <text fill="#475569" fontSize="12" x="530" y="140">4 models × 3 strategies</text>
+      <text fill="#475569" fontSize="12" x="530" y="160">CV · MLflow · threshold</text>
+      <rect fill="#f0fdfa" height="108" rx="12" stroke="#5eead4" width="218" x="762" y="85" />
+      <text fill="#134e4a" fontSize="15" fontWeight="700" x="778" y="115">Saved artifacts</text>
+      <text fill="#475569" fontSize="12" x="778" y="140">fitted ImbPipeline</text>
+      <text fill="#475569" fontSize="12" x="778" y="160">metadata · metrics · SHAP plots</text>
+      <path d="M232 139 H256 M480 139 H504 M728 139 H752" fill="none" markerEnd="url(#architecture-arrow)" stroke="#475569" strokeWidth="2" />
+      <rect fill="#fff7ed" height="52" rx="10" stroke="#fdba74" width="182" x="1004" y="112" />
+      <text fill="#9a3412" fontSize="12" fontWeight="700" x="1020" y="135">MLflow experiment log</text>
+      <text fill="#7c2d12" fontSize="11" x="1020" y="153">file store: mlruns/</text>
+      <path d="M976 139 H994" fill="none" markerEnd="url(#architecture-arrow)" stroke="#c2410c" strokeWidth="2" />
+
+      <text fill="#0f172a" fontSize="20" fontWeight="700" x="34" y="292">ONLINE: prediction request and explanation</text>
+      <rect fill="#eff6ff" height="214" rx="18" stroke="#93c5fd" width="1110" x="30" y="310" />
+      <rect fill="#fff" height="108" rx="12" stroke="#93c5fd" width="166" x="48" y="354" />
+      <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="62" y="382">Browser</text>
+      <text fill="#475569" fontSize="11" x="62" y="404">React + TypeScript</text>
+      <text fill="#475569" fontSize="11" x="62" y="424">form + result display</text>
+      <rect fill="#fff" height="108" rx="12" stroke="#93c5fd" width="176" x="246" y="354" />
+      <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="260" y="382">Nginx frontend</text>
+      <text fill="#475569" fontSize="11" x="260" y="404">serves built website</text>
+      <text fill="#475569" fontSize="11" x="260" y="424">proxies /api/ to backend</text>
+      <rect fill="#fff" height="108" rx="12" stroke="#93c5fd" width="194" x="452" y="354" />
+      <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="466" y="382">FastAPI application</text>
+      <text fill="#475569" fontSize="11" x="466" y="404">Pydantic · routes · errors</text>
+      <text fill="#475569" fontSize="11" x="466" y="424">/predict · /explain</text>
+      <rect fill="#fff" height="108" rx="12" stroke="#93c5fd" width="188" x="674" y="354" />
+      <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="688" y="382">Predictor singleton</text>
+      <text fill="#475569" fontSize="11" x="688" y="404">loads joblib at startup</text>
+      <text fill="#475569" fontSize="11" x="688" y="424">probability + risk band</text>
+      <rect fill="#fff" height="108" rx="12" stroke="#93c5fd" width="216" x="888" y="354" />
+      <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="902" y="382">XGBoost + TreeSHAP</text>
+      <text fill="#475569" fontSize="11" x="902" y="404">prediction and contributions</text>
+      <text fill="#475569" fontSize="11" x="902" y="424">waterfall PNG encoded for API</text>
+      <path d="M214 386 H236 M422 386 H442 M646 386 H664 M862 386 H878" fill="none" markerEnd="url(#architecture-arrow)" stroke="#475569" strokeWidth="2" />
+      <path d="M878 435 H664 M442 435 H214" fill="none" markerEnd="url(#architecture-return)" stroke="#0f766e" strokeWidth="2" />
+      <text fill="#475569" fontSize="11" x="210" y="371">HTTPS/HTTP page</text>
+      <text fill="#475569" fontSize="11" x="421" y="371">JSON request</text>
+      <text fill="#0f766e" fontSize="11" x="690" y="456">JSON prediction and explanation return to browser</text>
+
+      <rect fill="#fff7ed" height="42" rx="10" stroke="#fdba74" width="1110" x="30" y="540" />
+      <text fill="#9a3412" fontSize="12" fontWeight="700" x="48" y="566">Configured but not application-integrated: PostgreSQL · MongoDB · Redis (Compose services have no prediction-write path in the API).</text>
+    </DiagramCanvas>
+  );
+}
+
+function TrainingWorkflowDiagram() {
+  return (
+    <DiagramCanvas height={590} label="Model training diagram showing the data audit, locked stratified split, training-fold preprocessing, three imbalance strategies, four classifiers, cross-validation, out-of-fold threshold, final test evaluation, and output artifacts." width={1080}>
+      <defs>
+        <marker id="training-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+          <path d="M0,0 L8,4 L0,8 z" fill="#64748b" />
+        </marker>
+      </defs>
+      <text fill="#0f172a" fontSize="20" fontWeight="700" x="30" y="34">TRAINING WORKFLOW · the held-out test stays outside model selection</text>
+      {[
+        { x: 30, title: '1 · Raw data', lines: ['Telco CSV', '7,043 rows'], fill: '#f0fdfa', stroke: '#5eead4' },
+        { x: 240, title: '2 · Audit + clean', lines: ['validate 11 blanks', 'write clean dataset'], fill: '#f0fdfa', stroke: '#5eead4' },
+        { x: 450, title: '3 · Locked split', lines: ['stratified 80 / 20', '5,634 train · 1,409 test'], fill: '#eff6ff', stroke: '#93c5fd' },
+      ].map((node) => (
+        <g key={node.title}>
+          <rect fill={node.fill} height="92" rx="12" stroke={node.stroke} width="182" x={node.x} y="72" />
+          <text fill="#0f172a" fontSize="13" fontWeight="700" x={node.x + 13} y="101">{node.title}</text>
+          <text fill="#475569" fontSize="11" x={node.x + 13} y="124">{node.lines[0]}</text>
+          <text fill="#475569" fontSize="11" x={node.x + 13} y="143">{node.lines[1]}</text>
+        </g>
+      ))}
+      <path d="M212 118 H230 M422 118 H440" fill="none" markerEnd="url(#training-arrow)" stroke="#64748b" strokeWidth="2" />
+      <path d="M541 164 V205 H428" fill="none" markerEnd="url(#training-arrow)" stroke="#64748b" strokeWidth="2" />
+      <rect fill="#f8fafc" height="265" rx="16" stroke="#94a3b8" width="570" x="28" y="208" />
+      <text fill="#0f172a" fontSize="15" fontWeight="700" x="48" y="237">TRAINING SET ONLY · repeated stratified 5-fold CV, 2 repeats</text>
+      <rect fill="#fff" height="72" rx="10" stroke="#cbd5e1" width="150" x="48" y="262" />
+      <text fill="#334155" fontSize="12" fontWeight="700" x="62" y="288">Fold training rows</text>
+      <text fill="#64748b" fontSize="11" x="62" y="310">fit each step here</text>
+      <rect fill="#fff" height="72" rx="10" stroke="#cbd5e1" width="170" x="224" y="262" />
+      <text fill="#334155" fontSize="12" fontWeight="700" x="238" y="288">Preprocess</text>
+      <text fill="#64748b" fontSize="11" x="238" y="310">impute · scale · encode</text>
+      <rect fill="#fff7ed" height="72" rx="10" stroke="#fdba74" width="150" x="420" y="262" />
+      <text fill="#9a3412" fontSize="12" fontWeight="700" x="434" y="288">Sampler option</text>
+      <text fill="#7c2d12" fontSize="11" x="434" y="310">none / weight / SMOTE</text>
+      <path d="M198 298 H214 M394 298 H410" fill="none" markerEnd="url(#training-arrow)" stroke="#64748b" strokeWidth="2" />
+      <rect fill="#fff" height="68" rx="10" stroke="#cbd5e1" width="508" x="48" y="352" />
+      <text fill="#334155" fontSize="12" fontWeight="700" x="62" y="378">Fit one classifier per configuration</text>
+      <text fill="#64748b" fontSize="11" x="62" y="399">Logistic Regression · Random Forest · XGBoost · PyTorch MLP</text>
+      <path d="M495 334 V345" fill="none" markerEnd="url(#training-arrow)" stroke="#64748b" strokeWidth="2" />
+      <text fill="#475569" fontSize="11" x="48" y="440">Score validation fold with PR-AUC; log fold results to MLflow.</text>
+      <text fill="#475569" fontSize="11" x="48" y="459">Compare strategies with paired Nadeau–Bengio corrected tests.</text>
+
+      <rect fill="#eff6ff" height="84" rx="12" stroke="#93c5fd" width="216" x="670" y="222" />
+      <text fill="#1e3a8a" fontSize="13" fontWeight="700" x="686" y="250">4 · Select XGBoost</text>
+      <text fill="#475569" fontSize="11" x="686" y="273">best reported XGBoost CV</text>
+      <text fill="#475569" fontSize="11" x="686" y="291">mean PR-AUC about 0.671</text>
+      <rect fill="#eff6ff" height="84" rx="12" stroke="#93c5fd" width="216" x="670" y="332" />
+      <text fill="#1e3a8a" fontSize="13" fontWeight="700" x="686" y="360">5 · OOF threshold</text>
+      <text fill="#475569" fontSize="11" x="686" y="383">training-only predictions</text>
+      <text fill="#475569" fontSize="11" x="686" y="401">maximize F1 → 0.335</text>
+      <path d="M598 390 H650 V264 H660 M778 314 V322" fill="none" markerEnd="url(#training-arrow)" stroke="#64748b" strokeWidth="2" />
+
+      <rect fill="#fff7ed" height="100" rx="12" stroke="#fdba74" width="176" x="900" y="220" />
+      <text fill="#9a3412" fontSize="13" fontWeight="700" x="915" y="248">6 · Locked test</text>
+      <text fill="#7c2d12" fontSize="11" x="915" y="271">fit final pipeline on train</text>
+      <text fill="#7c2d12" fontSize="11" x="915" y="289">evaluate test once</text>
+      <text fill="#7c2d12" fontSize="11" x="915" y="307">2,000 bootstrap samples</text>
+      <path d="M632 118 H880 V260 H890" fill="none" markerEnd="url(#training-arrow)" stroke="#b45309" strokeDasharray="6 5" strokeWidth="2" />
+      <text fill="#92400e" fontSize="10" x="686" y="138">test set stays untouched until final evaluation</text>
+      <path d="M886 374 H894 V320" fill="none" markerEnd="url(#training-arrow)" stroke="#64748b" strokeWidth="2" />
+
+      <rect fill="#f0fdfa" height="104" rx="12" stroke="#5eead4" width="646" x="404" y="468" />
+      <text fill="#134e4a" fontSize="13" fontWeight="700" x="422" y="496">7 · Artifacts saved for inspection and serving</text>
+      <text fill="#475569" fontSize="11" x="422" y="519">backend/models/xgb_churn_pipeline.joblib · model_metadata.json</text>
+      <text fill="#475569" fontSize="11" x="422" y="539">reports/metrics/model_evaluation.json · model_comparison.csv · reports/figures/SHAP plots</text>
+      <path d="M988 320 V456 H950 V458" fill="none" markerEnd="url(#training-arrow)" stroke="#64748b" strokeWidth="2" />
+    </DiagramCanvas>
+  );
+}
+
+function PredictionSequenceDiagram() {
+  return (
+    <DiagramCanvas height={610} label="Sequence diagram showing the browser sending prediction and explanation requests via Nginx to FastAPI, the loaded predictor and TreeSHAP, and the response returning to the user." width={1080}>
+      <defs>
+        <marker id="sequence-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+          <path d="M0,0 L8,4 L0,8 z" fill="#475569" />
+        </marker>
+        <marker id="sequence-return" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0f766e" />
+        </marker>
+      </defs>
+      <text fill="#0f172a" fontSize="20" fontWeight="700" x="30" y="34">ONE USER ACTION · request and response sequence</text>
+      {[
+        { x: 80, label: 'User / browser' },
+        { x: 300, label: 'Nginx / React' },
+        { x: 520, label: 'FastAPI routes' },
+        { x: 740, label: 'Predictor' },
+        { x: 960, label: 'XGBoost / SHAP' },
+      ].map((lane) => (
+        <g key={lane.label}>
+          <rect fill="#eff6ff" height="48" rx="10" stroke="#93c5fd" width="150" x={lane.x - 70} y="64" />
+          <text fill="#1e3a8a" fontSize="12" fontWeight="700" textAnchor="middle" x={lane.x + 5} y="93">{lane.label}</text>
+          <path d={`M${lane.x + 5} 118 V560`} stroke="#cbd5e1" strokeDasharray="5 6" strokeWidth="1.5" />
+        </g>
+      ))}
+      {[
+        { y: 150, from: 85, to: 305, text: 'Enter customer details' },
+        { y: 198, from: 305, to: 525, text: 'POST /api/v1/predict + /explain' },
+        { y: 246, from: 525, to: 745, text: 'validate schema; dispatch call' },
+        { y: 294, from: 745, to: 965, text: 'probability + SHAP values' },
+      ].map((message) => (
+        <g key={message.text}>
+          <path d={`M${message.from} ${message.y} H${message.to - 9}`} fill="none" markerEnd="url(#sequence-arrow)" stroke="#475569" strokeWidth="2" />
+          <rect fill="#fff" height="24" rx="5" width="226" x={(message.from + message.to) / 2 - 113} y={message.y - 26} />
+          <text fill="#334155" fontSize="10" textAnchor="middle" x={(message.from + message.to) / 2} y={message.y - 10}>{message.text}</text>
+        </g>
+      ))}
+      <rect fill="#f8fafc" height="76" rx="10" stroke="#cbd5e1" width="170" x="665" y="320" />
+      <text fill="#334155" fontSize="11" fontWeight="700" x="679" y="344">Pipeline in memory</text>
+      <text fill="#64748b" fontSize="10" x="679" y="363">preprocessor + classifier</text>
+      <text fill="#64748b" fontSize="10" x="679" y="380">loaded once at startup</text>
+      <path d="M745 294 V312" fill="none" markerEnd="url(#sequence-arrow)" stroke="#475569" strokeWidth="2" />
+      <path d="M965 294 V414 H745 V405" fill="none" markerEnd="url(#sequence-return)" stroke="#0f766e" strokeWidth="2" />
+      <text fill="#0f766e" fontSize="10" x="824" y="407">prediction probability + explanation</text>
+      <path d="M745 405 H525 V454" fill="none" markerEnd="url(#sequence-return)" stroke="#0f766e" strokeWidth="2" />
+      <rect fill="#f0fdfa" height="60" rx="10" stroke="#5eead4" width="170" x="440" y="454" />
+      <text fill="#134e4a" fontSize="11" fontWeight="700" x="454" y="479">Response schema</text>
+      <text fill="#475569" fontSize="10" x="454" y="497">probability · risk · drivers</text>
+      <path d="M525 514 V535 H305 V514" fill="none" markerEnd="url(#sequence-return)" stroke="#0f766e" strokeWidth="2" />
+      <path d="M305 535 H85 V514" fill="none" markerEnd="url(#sequence-return)" stroke="#0f766e" strokeWidth="2" />
+      <text fill="#0f766e" fontSize="10" textAnchor="middle" x="305" y="555">website shows result; plot is returned as base64 PNG</text>
+      <text fill="#92400e" fontSize="10" x="32" y="592">The prediction endpoint and explanation endpoint are requested concurrently by the frontend.</text>
+    </DiagramCanvas>
+  );
+}
+
+function DeploymentDiagram() {
+  return (
+    <DiagramCanvas height={510} label="Docker deployment diagram with local browser ports and Docker Compose network services for frontend Nginx, backend FastAPI, MLflow, PostgreSQL, MongoDB, and Redis; database services are marked configured but not used by prediction writes." width={1080}>
+      <defs>
+        <marker id="deploy-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+          <path d="M0,0 L8,4 L0,8 z" fill="#475569" />
+        </marker>
+      </defs>
+      <text fill="#0f172a" fontSize="20" fontWeight="700" x="30" y="34">DOCKER COMPOSE · services share a private bridge network</text>
+      <rect fill="#eff6ff" height="72" rx="12" stroke="#93c5fd" width="212" x="30" y="86" />
+      <text fill="#1e3a8a" fontSize="14" fontWeight="700" x="49" y="115">Browser on host</text>
+      <text fill="#475569" fontSize="11" x="49" y="138">website :3000 · API :8000</text>
+      <rect fill="#f8fafc" height="355" rx="18" stroke="#94a3b8" strokeDasharray="7 5" width="792" x="265" y="65" />
+      <text fill="#334155" fontSize="13" fontWeight="700" x="285" y="91">churnxai-network · Compose bridge</text>
+      <rect fill="#f0fdfa" height="78" rx="11" stroke="#5eead4" width="208" x="290" y="119" />
+      <text fill="#134e4a" fontSize="13" fontWeight="700" x="306" y="146">frontend · Nginx</text>
+      <text fill="#475569" fontSize="10" x="306" y="166">host :3000 → container :80</text>
+      <text fill="#475569" fontSize="10" x="306" y="184">serves Vite production build</text>
+      <rect fill="#eff6ff" height="78" rx="11" stroke="#93c5fd" width="208" x="550" y="119" />
+      <text fill="#1e3a8a" fontSize="13" fontWeight="700" x="566" y="146">backend · FastAPI</text>
+      <text fill="#475569" fontSize="10" x="566" y="166">host :8000 → container :8000</text>
+      <text fill="#475569" fontSize="10" x="566" y="184">health check gates frontend start</text>
+      <path d="M242 123 H280" fill="none" markerEnd="url(#deploy-arrow)" stroke="#475569" strokeWidth="2" />
+      <path d="M498 158 H540" fill="none" markerEnd="url(#deploy-arrow)" stroke="#475569" strokeWidth="2" />
+      <text fill="#64748b" fontSize="10" x="501" y="146">/api/* proxy</text>
+
+      <rect fill="#fff7ed" height="75" rx="11" stroke="#fdba74" width="208" x="290" y="232" />
+      <text fill="#9a3412" fontSize="13" fontWeight="700" x="306" y="259">mlflow · tracking UI</text>
+      <text fill="#7c2d12" fontSize="10" x="306" y="279">host :5000 · backed by ./mlruns</text>
+      <text fill="#7c2d12" fontSize="10" x="306" y="297">runs logged during training</text>
+
+      <rect fill="#fff" height="75" rx="11" stroke="#cbd5e1" strokeDasharray="5 4" width="208" x="550" y="232" />
+      <text fill="#334155" fontSize="13" fontWeight="700" x="566" y="259">PostgreSQL</text>
+      <text fill="#64748b" fontSize="10" x="566" y="279">host :5432 · persistent volume</text>
+      <text fill="#9a3412" fontSize="10" x="566" y="297">configured; app writes not wired</text>
+      <rect fill="#fff" height="75" rx="11" stroke="#cbd5e1" strokeDasharray="5 4" width="208" x="290" y="337" />
+      <text fill="#334155" fontSize="13" fontWeight="700" x="306" y="364">MongoDB</text>
+      <text fill="#64748b" fontSize="10" x="306" y="384">host :27017 · persistent volume</text>
+      <text fill="#9a3412" fontSize="10" x="306" y="402">configured; app writes not wired</text>
+      <rect fill="#fff" height="75" rx="11" stroke="#cbd5e1" strokeDasharray="5 4" width="208" x="550" y="337" />
+      <text fill="#334155" fontSize="13" fontWeight="700" x="566" y="364">Redis</text>
+      <text fill="#64748b" fontSize="10" x="566" y="384">host :6379 · persistent volume</text>
+      <text fill="#9a3412" fontSize="10" x="566" y="402">configured; not used by request path</text>
+
+      <rect fill="#f8fafc" height="355" rx="18" stroke="#cbd5e1" width="273" x="803" y="65" />
+      <text fill="#334155" fontSize="13" fontWeight="700" x="823" y="91">Mounted model/data</text>
+      <rect fill="#fff" height="70" rx="10" stroke="#cbd5e1" width="232" x="823" y="119" />
+      <text fill="#334155" fontSize="11" fontWeight="700" x="839" y="145">./backend/models → /app/models</text>
+      <text fill="#64748b" fontSize="10" x="839" y="167">joblib pipeline + metadata JSON</text>
+      <rect fill="#fff" height="70" rx="10" stroke="#cbd5e1" width="232" x="823" y="211" />
+      <text fill="#334155" fontSize="11" fontWeight="700" x="839" y="237">./data → /app/data</text>
+      <text fill="#64748b" fontSize="10" x="839" y="259">dataset available to backend</text>
+      <rect fill="#fff" height="70" rx="10" stroke="#cbd5e1" width="232" x="823" y="303" />
+      <text fill="#334155" fontSize="11" fontWeight="700" x="839" y="329">./mlruns → /mlruns</text>
+      <text fill="#64748b" fontSize="10" x="839" y="351">experiment files and UI store</text>
+      <path d="M758 158 H812" fill="none" markerEnd="url(#deploy-arrow)" stroke="#64748b" strokeWidth="2" />
+      <text fill="#9a3412" fontSize="11" fontWeight="700" x="285" y="459">Solid arrows = used request/service path · dashed-outline database boxes = containers are configured, but not connected to prediction writes.</text>
+      <text fill="#475569" fontSize="10" x="285" y="481">Volumes keep configured data across container restarts; the Compose network lets services resolve one another by service name.</text>
+    </DiagramCanvas>
   );
 }
 
@@ -236,7 +523,7 @@ function ProjectGuide() {
             <SectionHeading
               eyebrow="Start here"
               title="What problem does the project solve?"
-              text="A company usually learns that a customer has left only after it happens. ChurnXAI explores whether customer information can give an earlier warning, so a person can decide whether to offer help."
+              text="A company usually learns that a customer has left only after it happens. ChurnXAI uses 7,043 historical telecom customer records to explore whether customer information can give an earlier warning, so a person can decide whether to offer help."
             />
             <div className="grid gap-4 md:grid-cols-3">
               {[
@@ -285,6 +572,27 @@ function ProjectGuide() {
                 ))}
               </div>
             </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <article className="rounded-2xl border border-slate-200 bg-white p-6">
+                <h3 className="font-bold text-slate-900">What goes into the model?</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  The original table has 21 columns: a customer ID, 19 customer
+                  attributes, and the Churn answer. The ID is not a behavioral
+                  predictor. The fitted model uses 3 numeric inputs—tenure,
+                  MonthlyCharges, and TotalCharges—and 16 categorical inputs such
+                  as Contract, InternetService, and PaymentMethod.
+                </p>
+              </article>
+              <article className="rounded-2xl border border-slate-200 bg-white p-6">
+                <h3 className="font-bold text-slate-900">What is the final model’s test result?</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  The saved test results give F1 = 0.631 (95% interval 0.589–0.667),
+                  precision = 0.557, recall = 0.727, ROC-AUC = 0.847
+                  (0.825–0.868), and PR-AUC = 0.665 (0.611–0.713). These are
+                  estimates on this test split, not a guarantee for new customers.
+                </p>
+              </article>
+            </div>
           </section>
         )}
 
@@ -292,27 +600,39 @@ function ProjectGuide() {
           <section className="space-y-7">
             <SectionHeading
               eyebrow="Architecture"
-              title="Two connected halves: learning and serving"
-              text="The training half makes a reusable model from historical data. The serving half loads that saved model and answers requests from the website."
+              title="From files and model code to a running prediction service"
+              text="This is the actual repository architecture: data-science scripts create artifacts offline; a separately running React website calls FastAPI, which loads and uses those artifacts."
             />
             <ArchitectureDiagram />
-            <div className="grid gap-4 md:grid-cols-2">
-              <article className="rounded-2xl border border-slate-200 bg-white p-5">
-                <h3 className="font-bold text-slate-900">Training is like studying</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Notebooks and Python scripts clean data, compare candidate models,
-                  evaluate the selected model, and save the fitted pipeline. Training
-                  is not repeated for each website prediction.
-                </p>
-              </article>
-              <article className="rounded-2xl border border-slate-200 bg-white p-5">
-                <h3 className="font-bold text-slate-900">Serving is like answering</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  React sends a customer form to FastAPI. The API validates the form,
-                  asks the saved pipeline for a probability, and can ask SHAP to explain
-                  that one result.
-                </p>
-              </article>
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                ['Data science layer', 'notebooks/01_data_audit_eda.ipynb calls reusable audit/statistics code. notebooks/02_train_evaluate.ipynb and backend/model_comparison.py compare candidates and produce the artifacts.'],
+                ['Application/API layer', 'app/main.py creates FastAPI and loads the predictor during startup. app/api/router.py joins health, predict, and explain routes under /api/v1.'],
+                ['ML inference layer', 'app/ml/predictor.py holds the fitted pipeline and metadata. app/ml/explainer.py uses the loaded tree classifier and its preprocessor to produce SHAP results.'],
+                ['Contract and validation layer', 'app/schemas/customer.py defines allowed customer inputs; response.py defines prediction and explanation output shapes. Invalid inputs are rejected before inference.'],
+                ['Presentation layer', 'React pages render the dashboard, prediction form, pipeline view, and guide. services/api.ts uses Axios; Nginx serves the built site and forwards /api/ calls.'],
+                ['Operations layer', 'docker-compose.yml coordinates containers and health dependencies. MLflow records training runs. Database/cache services are declared but not used for prediction persistence.'],
+              ].map(([title, text]) => (
+                <article className="rounded-2xl border border-slate-200 bg-white p-5" key={title}>
+                  <h3 className="font-bold text-slate-900">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+                </article>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h3 className="font-bold text-slate-900">API contract at a glance</h3>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {[
+                  ['GET /api/v1/health', 'Reports whether the API is healthy and the model is loaded.'],
+                  ['GET /api/v1/model-info', 'Returns non-sensitive saved model, split, threshold, and evaluation metadata.'],
+                  ['POST /api/v1/predict · /explain', 'Accepts a validated customer profile; returns a prediction or a SHAP explanation.'],
+                ].map(([route, details]) => (
+                  <article className="rounded-xl bg-slate-50 p-4" key={route}>
+                    <code className="break-words text-xs font-bold text-teal-800">{route}</code>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{details}</p>
+                  </article>
+                ))}
+              </div>
             </div>
           </section>
         )}
@@ -321,10 +641,30 @@ function ProjectGuide() {
           <section className="space-y-7">
             <SectionHeading
               eyebrow="Diagrams"
-              title="Follow the customer information"
-              text="Arrows show the direction of the work. The prediction response travels back to the website."
+              title="Three diagrams: training, a prediction request, and deployment"
+              text="These diagrams show the actual stages and components, not just a high-level picture. Each label corresponds to code, files, or services in this repository."
             />
-            <ArchitectureDiagram />
+            <article className="space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">1. Data and model training</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-600">The dashed amber path marks the held-out test set: it is reserved until final evaluation. Cleaning, transformations, and optional SMOTE are learned only in training.</p>
+              </div>
+              <TrainingWorkflowDiagram />
+            </article>
+            <article className="space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">2. One prediction: sequence diagram</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-600">Read from top to bottom. The browser calls prediction and explanation routes, then renders the returned data and explanation image.</p>
+              </div>
+              <PredictionSequenceDiagram />
+            </article>
+            <article className="space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">3. Docker deployment and network</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-600">Host ports are different from internal service ports. Dashed database outlines highlight containers that are configured but not connected to prediction writes.</p>
+              </div>
+              <DeploymentDiagram />
+            </article>
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
               <h3 className="font-bold text-slate-900">One prediction, step by step</h3>
               <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -404,6 +744,35 @@ function ProjectGuide() {
               </p>
               <p className="mt-2 text-xs text-sky-800">Source: reports/metrics/model_evaluation.json</p>
             </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h3 className="font-bold text-slate-900">The test confusion matrix in plain language</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                At the selected threshold, the held-out test set had 819 correct
+                “stay” predictions, 272 correctly detected churners, 216 false
+                alarms, and 102 missed churners. A false alarm means the model
+                predicted churn but the customer did not churn in the recorded label;
+                a missed churner means it predicted stay but the customer churned.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-center text-sm sm:grid-cols-4">
+                {[
+                  ['819', 'true negatives'],
+                  ['272', 'true positives'],
+                  ['216', 'false positives'],
+                  ['102', 'false negatives'],
+                ].map(([value, label]) => (
+                  <div className="rounded-xl bg-slate-50 p-3" key={label}>
+                    <div className="text-xl font-bold text-slate-900">{value}</div>
+                    <div className="text-xs text-slate-600">{label}</div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">
+                The dataset’s majority class is “No churn”: 5,174 of 7,043 customers
+                (about 73.5%). That is why accuracy alone can be misleading. The
+                reported test accuracy is about 77.4%, but recall (0.727) and
+                precision (0.557) help explain what happens specifically to churn cases.
+              </p>
+            </div>
             <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5">
               <ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
               <p className="text-sm leading-6 text-amber-950">
@@ -447,14 +816,14 @@ function ProjectGuide() {
         {activeSection === 'viva' && (
           <section className="space-y-7">
             <SectionHeading
-              eyebrow="Viva preparation"
-              title="A simple way to explain your project"
-              text="Use your own words and be honest about what is implemented. This short answer gives you a safe starting point."
+              eyebrow="Viva"
+              title="50 viva questions and answers"
+              text="Use these as revision notes, not a script to memorize. The answers are based on this repository; be clear about limitations as well as completed features."
             />
             <article className="rounded-2xl border border-teal-200 bg-white p-6 shadow-sm sm:p-8">
               <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-teal-700">
                 <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-                A short presentation answer
+                Short project introduction
               </div>
               <blockquote className="mt-5 space-y-4 text-base leading-8 text-slate-700">
                 <p>
@@ -483,20 +852,21 @@ function ProjectGuide() {
               </blockquote>
             </article>
             <div>
-              <h3 className="mb-3 text-lg font-bold text-slate-900">Questions you may be asked</h3>
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <h3 className="text-lg font-bold text-slate-900">Viva question bank</h3>
+                <span className="rounded-full bg-teal-100 px-3 py-1 text-sm font-bold text-teal-800">{vivaQuestions.length} questions</span>
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
-                {[
-                  ['Why predict churn?', 'To give a company an earlier signal so staff can consider helpful retention actions. The model does not make the decision for them.'],
-                  ['Why not report accuracy only?', 'The “No churn” group is larger. A model can look accurate while missing many churners, so precision, recall, F1, ROC-AUC, and PR-AUC give a fuller picture.'],
-                  ['Why keep a separate test set?', 'It gives one final check on examples that were not used to choose the model or decision threshold.'],
-                  ['Why use SHAP?', 'It gives a consistent contribution for each feature in a prediction and supports global or individual explanations. It explains the model, not causation.'],
-                  ['What does the threshold do?', 'It changes the probability into a Yes/No class. A lower threshold can catch more churners but may create more false alarms.'],
-                  ['Are the databases connected?', 'The containers are declared in Docker Compose, but the application does not currently write prediction or explanation records to them.'],
-                ].map(([question, answer]) => (
-                  <article className="rounded-xl border border-slate-200 bg-white p-4" key={question}>
-                    <h4 className="font-bold text-slate-900">{question}</h4>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{answer}</p>
-                  </article>
+                {vivaQuestions.map(([question, answer], index) => (
+                  <details className="group rounded-xl border border-slate-200 bg-white p-4 open:border-teal-300 open:bg-teal-50/40" key={question}>
+                    <summary className="cursor-pointer list-none font-bold text-slate-900 marker:hidden">
+                      <span className="mr-2 text-teal-700">{String(index + 1).padStart(2, '0')}.</span>
+                      {question}
+                      <span aria-hidden="true" className="float-right ml-2 text-teal-700 group-open:hidden">+</span>
+                      <span aria-hidden="true" className="float-right ml-2 hidden text-teal-700 group-open:inline">−</span>
+                    </summary>
+                    <p className="mt-3 border-t border-slate-200 pt-3 text-sm leading-6 text-slate-700">{answer}</p>
+                  </details>
                 ))}
               </div>
             </div>
